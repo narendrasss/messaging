@@ -90,7 +90,16 @@ function handleMessage(senderId, receivedMessage) {
   sendMessage(senderId, response);
 }
 
-function handlePostback(senderId, receivedPostback) {}
+function handlePostback(senderId, receivedPostback) {
+  let response;
+  const { payload } = receivedPostback;
+  if (payload === "yes") {
+    response = { text: "Thanks!" };
+  } else if (payload === "no") {
+    response = { text: "Oops, send me another image." };
+  }
+  sendMessage(senderId, response);
+}
 
 function sendMessage(senderId, response) {
   const body = {

@@ -12,5 +12,11 @@ const Client = new Messenger.Client({
   page_token: process.env.PAGE_ACCESS_TOKEN
 });
 
+Client.setMessengerProfile({
+  get_started: {
+    payload: "get-started"
+  }
+});
+
 Webhook.on("messages", messagesController(Client));
 Webhook.on("messaging_postbacks", postbacksController(Client));

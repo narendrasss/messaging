@@ -3,7 +3,22 @@ function messagesController(client) {
     const { message } = webhook_event;
     const recipient = { id: sender_info.value };
     if (message.text) {
-      client.sendText(recipient, webhook_event.message.text);
+      const text = message.text;
+      if (text === "debug") {
+        client.sendTemplate(recipient, {
+          template_type: "button",
+          text: "DEBUG",
+          buttons: [
+            {
+              type: "postback",
+              title: "Get started",
+              payload: "get-started"
+            }
+          ]
+        });
+      } else {
+        client.sendText(recipient, webhook_event.message.text);
+      }
     } else if (message.attachments) {
       const { url } = message.attachments[0].payload;
       const template = {

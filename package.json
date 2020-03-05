@@ -8,6 +8,9 @@
     "messenger-node": "^0.3.2"
   },
   "scripts": {
-    "start": "node src/index.js"
+    "start": "nodemon src/index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
   }
 }

@@ -4,7 +4,7 @@ function messagesController(client) {
     const recipient = { id: sender_info.value };
     if (message.text) {
       const text = message.text;
-      if (text === "debug") {
+      if (text.toLowerCase() === "debug") {
         client.sendTemplate(recipient, {
           template_type: "button",
           text: "DEBUG",

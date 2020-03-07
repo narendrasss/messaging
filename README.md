@@ -2,6 +2,8 @@
 
 A chatbot to make selling used items a little easier.
 
+Example DB instance:
+
 ```json
 {
   "listings": {

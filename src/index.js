@@ -11,6 +11,12 @@ firebase.initializeApp({
 });
 
 const database = firebase.database();
+
+/**
+ * Example firebase usage:
+ *  - `database.ref("listings")` means move to the listings object of the schema
+ *  - `listings.set({})` means set the listings object to an empty object
+ */
 const listings = database.ref("listings");
 listings.set({});
 

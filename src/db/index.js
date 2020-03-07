@@ -1,13 +1,10 @@
 const firebase = require("firebase-admin");
 
-function init() {
-  firebase.initializeApp({
-    credential: firebase.credential.applicationDefault(),
-    databaseURL: process.env.DB_URL
-  });
-  return firebase.database();
-}
+firebase.initializeApp({
+  credential: firebase.credential.applicationDefault(),
+  databaseURL: process.env.DB_URL
+});
 
 module.exports = {
-  init
+  db: firebase.database()
 };

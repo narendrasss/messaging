@@ -27,4 +27,13 @@ function getMessageType(message) {
   return messageTypes.UNSUPPORTED;
 }
 
-module.exports = { getMessageType, messageTypes };
+function getListingId(message) {
+  const { url } = message.attachments[0].payload;
+  const id = url.split("item/")[1];
+  if (id[id.length - 1] === "/") {
+    return id.slice(0, id.length - 1);
+  }
+  return id;
+}
+
+module.exports = { getMessageType, getListingId, messageTypes };

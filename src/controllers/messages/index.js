@@ -4,7 +4,8 @@ const { getMessageType, messageTypes } = require("./helpers");
 const handlerMap = {
   [messageTypes.TEXT]: handlers.handleText,
   [messageTypes.DEBUG]: handlers.handleDebug,
-  [messageTypes.ATTACHMENT]: handlers.handleAttachments
+  [messageTypes.ATTACHMENT]: handlers.handleAttachments,
+  [messageTypes.LISTING]: handlers.handleListing
 };
 
 function messagesController(client) {

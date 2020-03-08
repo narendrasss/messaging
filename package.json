@@ -8,10 +8,14 @@
     "firebase-admin": "^8.9.2",
     "messenger-node": "^0.3.2"
   },
-  "scripts": {
-    "start": "nodemon src/index.js"
-  },
   "devDependencies": {
     "nodemon": "^2.0.2"
+  },
+  "engines": {
+    "node": "13.5.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "start:dev": "nodemon src/index.js"
   }
 }

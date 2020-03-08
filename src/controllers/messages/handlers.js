@@ -51,7 +51,10 @@ function handleListing(client, recipient, message) {
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
     if (snapshot.val()) {
-      client.sendText(recipient, "You're a buyer!");
+      const { seller } = snapshot.val();
+      if (seller !== recipient.id) {
+        client.sendText(recipient, "You're a buyer!");
+      }
     } else {
       // TODO: Prompt the user if they are seller or not
       listings.child(listingId).set({ seller: recipient.id });

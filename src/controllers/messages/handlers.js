@@ -6,6 +6,7 @@ const {
   createListing,
   promptSetupQueue
 } = require("./users/seller");
+const t = require("../../copy.json");
 
 function handleText(client, recipient, message) {
   client.sendText(recipient, message.text);

@@ -1,3 +1,5 @@
+const t = require("../../../copy.json");
+
 // AUTOMATED REPLIES
 
 /**
@@ -11,17 +13,17 @@ function promptStart(client, recipient, text) {
   const replies = [
     {
       content_type: "text",
-      title: "Show all your listings",
+      title: t.start.show_listings,
       payload: ""
     },
     {
       content_type: "text",
-      title: "Show all items you're interested in",
+      title: t.start.show_interested,
       payload: ""
     },
     {
       content_type: "text",
-      title: "Quit",
+      title: t.start.quit,
       payload: ""
     }
   ];
@@ -35,11 +37,11 @@ function promptStart(client, recipient, text) {
  * @param {object} recipient
  */
 function promptUserCategorization(client, recipient, listingId) {
-  const text = "Are you the seller of this item?";
+  const text = t.user_categorization.question;
   const replies = [
     {
       content_type: "text",
-      title: "I am the seller!",
+      title: t.user_categorization.is_seller,
       payload: {
         type: "seller",
         listingId
@@ -47,7 +49,7 @@ function promptUserCategorization(client, recipient, listingId) {
     },
     {
       content_type: "text",
-      title: "I am the buyer!",
+      title: t.user_categorization.is_buyer,
       payload: {
         type: "buyer",
         listingId

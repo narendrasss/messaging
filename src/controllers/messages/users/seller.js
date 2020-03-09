@@ -48,11 +48,11 @@ function createListing(listingId, listing) {
  * @param {string} listingId
  */
 function promptSetupQueue(client, recipient, sellerId, listingId) {
-  const text = "Would you like to set up a queue for this item?";
+  const text = t.queue.question;
   const replies = [
     {
       content_type: "text",
-      title: "Yes, set up a queue!",
+      title: t.queue.setup,
       payload: {
         setupQueue: "YES",
         sellerId,
@@ -61,7 +61,7 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
     },
     {
       content_type: "text",
-      title: "No thanks.",
+      title: t.queue.no_setup,
       payload: {
         setupQueue: "NO",
         sellerId,

@@ -77,10 +77,7 @@ function handleQuickReply(client, recipient, message) {
 
   if (type) {
     if (type === "buyer") {
-      client.sendText(
-        recipient,
-        "The seller has not yet set up a queue for this item. Please contact the seller directly."
-      );
+      client.sendText(recipient, t.buyer.no_queue);
     } else if (type === "seller") {
       addListing(recipient.id, listingId);
       promptSetupQueue(client, recipient, recipient.id, listingId);
@@ -97,14 +94,9 @@ function handleQuickReply(client, recipient, message) {
     };
     createListing(listingId, listing);
 
-    if (listing.has_queue) {
-      promptStart("A queue has been set up! What would you like to do next?");
-    } else {
-      client.sendText(
-        recipient,
-        "You can set up a queue any time in the future by sharing the post again."
-      );
-    }
+    listing.has_queue
+      ? promptStart(t.queue.did_add)
+      : client.sendText(recipient, t.queue.did_not_add);
   }
 }
 

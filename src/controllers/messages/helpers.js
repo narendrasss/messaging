@@ -4,13 +4,16 @@ const messageTypes = {
   MULTIPLE: "multiple",
   LISTING: "listing",
   ATTACHMENT: "attachment",
-  UNSUPPORTED: "unsupported"
+  UNSUPPORTED: "unsupported",
+  QUICK_REPLY: "quick-reply"
 };
 
 function getMessageType(message) {
   if (message.text) {
     if (message.text.toLowerCase() === "debug") {
       return messageTypes.DEBUG;
+    } else if (message.quick_reply) {
+      return messageTypes.QUICK_REPLY;
     }
     return messageTypes.TEXT;
   }

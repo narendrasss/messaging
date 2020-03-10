@@ -15,8 +15,8 @@ function addListing(userId, listingId) {
       const { listings_sale } = snapshot.val();
       const user = users.child(userId);
       user.set({
-        ...user,
-        listings_sale: listings_sale.push(listingId)
+        ...snapshot.val(),
+        listings_sale: [...listings_sale, listingId]
       });
     } else {
       // if the seller doesn't exist in the db

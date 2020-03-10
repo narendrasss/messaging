@@ -13,8 +13,7 @@ const t = require("../../../copy.json");
  * @param {array} queue
  */
 function promptInterestedBuyer(client, recipient, queue) {
-  const q = queue || [];
-  const text = getQueueMessage(q.length);
+  const text = getQueueMessage(recipient.id, queue);
   const replies = [
     {
       content_type: "text",
@@ -27,9 +26,39 @@ function promptInterestedBuyer(client, recipient, queue) {
       payload: "skip-queue"
     }
   ];
+  sendText(text);
   client
-    .sendQuickReplies(recipient, replies, text)
+    .sendQuickReplies(
+      recipient,
+      replies,
+      "Would you like to be added to the queue?"
+    )
     .catch(err => console.error(err));
+}
+
+function notifyBuyerStatus(client, recipient, queue) {
+  sendText(client, recipient, getQueueMessage(recipient.id, queue));
+  client.sendQuickReplies(
+    recipient,
+    [
+      {
+        content_type: "text",
+        title: t.buyer.show_faq,
+        payload: "show-faq"
+      },
+      {
+        content_type: "text",
+        title: t.buyer.leave_queue,
+        payload: "leave-queue"
+      },
+      {
+        content_type: "text",
+        title: t.buyer.quit,
+        payload: "quit"
+      }
+    ],
+    "What would you like to do?"
+  );
 }
 
 function addUserToQueue(client, recipient, listingId) {
@@ -56,4 +85,4 @@ function addUserToQueue(client, recipient, listingId) {
   });
 }
 
-module.exports = { addUserToQueue, promptInterestedBuyer };
+module.exports = { addUserToQueue, notifyBuyerStatus, promptInterestedBuyer };

@@ -41,10 +41,20 @@ function getListingId(message) {
   return id;
 }
 
-function getQueueMessage(length) {
-  return `There ${length == 1 ? "is" : "are"} currently ${length} ${
-    length == 1 ? "person" : "people"
-  } waiting for this item. Would you like to be added to the queue?`;
+function getQueueMessage(id, queue) {
+  const index = queue.indexOf(id);
+  const length = queue.length;
+  if (index < 0) {
+    return `There ${length == 1 ? "is" : "are"} currently ${length} ${
+      length == 1 ? "person" : "people"
+    } waiting for this item.`;
+  }
+  if (index === 0) {
+    return "You're first in line.";
+  }
+  return `There are ${index} ${
+    index === 1 ? "person" : "people"
+  } ahead of you.`;
 }
 
 function sendText(client, recipient, text) {

@@ -4,7 +4,8 @@
     "add_queue": "Yes, please.",
     "dont_add_queue": "No thanks!",
     "quit": "Quit",
-    "show_faq": "See FAQ's about the item."
+    "show_faq": "See FAQ",
+    "leave_queue": "Leave queue"
   },
   "queue": {
     "did_add": "A queue has been set up! What would you like to do next?",

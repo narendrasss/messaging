@@ -2,7 +2,11 @@ const { db } = require("../../db");
 const context = require("../../context");
 const { getListingId, sendText } = require("./helpers");
 const { promptStart, promptUserCategorization } = require("./users/user");
-const { addUserToQueue, promptInterestedBuyer } = require("./users/buyer");
+const {
+  addUserToQueue,
+  notifyBuyerStatus,
+  promptInterestedBuyer
+} = require("./users/buyer");
 const {
   addListing,
   createListing,
@@ -65,21 +69,23 @@ function handleListing(client, recipient, message) {
       const { seller, has_queue, queue } = listing;
       if (seller !== recipient.id) {
         if (has_queue) {
-          context.setContext(recipient.id, "buyer-add-queue", { listingId });
-          promptInterestedBuyer(client, recipient, queue);
-        } else {
-          sendText(client, recipient, t.buyer.no_queue);
+          const q = queue || [];
+          if (!q.includes(recipient.id)) {
+            context.setContext(recipient.id, "buyer-add-queue", { listingId });
+            return promptInterestedBuyer(client, recipient, q);
+          }
+          context.setContext(recipient.id, "buyer-status", { listingId });
+          return notifyBuyerStatus(client, recipient, q);
         }
+        return sendText(client, recipient, t.buyer.no_queue);
       } else {
         if (has_queue) {
-          promptSellerListing(client, recipient, queue);
-        } else {
-          promptSetupQueue(client, recipient, listingId);
+          return promptSellerListing(client, recipient, queue);
         }
+        return promptSetupQueue(client, recipient, listingId);
       }
-    } else {
-      promptUserCategorization(client, recipient, listingId);
     }
+    return promptUserCategorization(client, recipient, listingId);
   });
 }
 

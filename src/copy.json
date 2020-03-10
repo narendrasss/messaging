@@ -13,6 +13,12 @@
     "question": "Would you like to set up a queue for this item?",
     "setup": "Yes, setup a queue!"
   },
+  "seller": {
+    "item_sold": "Remove item from listings.",
+    "own_listing": "This is one of your listings! What would you like to do next?",
+    "quit": "Quit",
+    "see_queue": "Display users in the queue."
+  },
   "start": {
     "show_interested": "Show all items you're interested in",
     "show_listings": "Show all your listings",

@@ -47,9 +47,21 @@ function getQueueMessage(length) {
   } waiting for this item. Would you like to be added to the queue?`;
 }
 
+function sendText(client, recipient, text) {
+  client.sendText(recipient, text).catch(err => console.error(err));
+}
+
+// source: https://stackoverflow.com/questions/43261798/javascript-how-to-use-template-literals-with-json/49369868
+function stringTemplateParser(expression, valueObj) {
+  const templateMatcher = /{{\s?([^{}\s]*)\s?}}/g;
+  return expression.replace(templateMatcher, (...[, value]) => valueObj[value]);
+}
+
 module.exports = {
   getMessageType,
   getListingId,
   getQueueMessage,
-  messageTypes
+  messageTypes,
+  sendText,
+  stringTemplateParser
 };

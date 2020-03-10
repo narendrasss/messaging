@@ -1,4 +1,4 @@
-const { getQueueMessage } = require("../helpers");
+const { getQueueMessage, sendText } = require("../helpers");
 const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
@@ -52,7 +52,7 @@ function addUserToQueue(client, recipient, listingId) {
     } else {
       queue.set([recipient.id]);
     }
-    client.sendText(recipient, "Great! You've been added to the queue.");
+    sendText(client, recipient, "Great! You've been added to the queue.");
   });
 }
 

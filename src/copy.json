@@ -2,7 +2,9 @@
   "buyer": {
     "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly.",
     "add_queue": "Yes, please.",
-    "dont_add_queue": "No thanks!"
+    "dont_add_queue": "No thanks!",
+    "quit": "Quit",
+    "show_faq": "See FAQ's about the item."
   },
   "queue": {
     "did_add": "A queue has been set up! What would you like to do next?",
@@ -10,6 +12,12 @@
     "no_setup": "No thanks.",
     "question": "Would you like to set up a queue for this item?",
     "setup": "Yes, setup a queue!"
+  },
+  "seller": {
+    "item_sold": "Remove item from listings.",
+    "own_listing": "This is one of your listings! What would you like to do next?",
+    "quit": "Quit",
+    "see_queue": "Display users in the queue."
   },
   "start": {
     "show_interested": "Show all items you're interested in",

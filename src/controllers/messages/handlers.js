@@ -65,11 +65,9 @@ function handleListing(client, recipient, message) {
           ? promptInterestedBuyer(client, recipient, queue)
           : sendText(client, recipient, t.buyer.no_queue);
       } else {
-        if (has_queue) {
-          promptSellerListing(client, recipient, queue);
-        } else {
-          // TODO: implement case where user is seller and no queue is set up
-        }
+        has_queue
+          ? promptSellerListing(client, recipient, queue)
+          : promptSetupQueue(client, recipient, listingId);
       }
     } else {
       promptUserCategorization(client, recipient, listingId);
@@ -87,9 +85,7 @@ function handleQuickReply(client, recipient, message) {
       sendText(client, recipient, t.buyer.no_queue);
     } else if (type === "seller") {
       addListing(recipient.id, listingId);
-      promptSetupQueue(client, recipient, recipient.id, listingId);
-    } else {
-      // TODO: implement default case
+      promptSetupQueue(client, recipient, listingId);
     }
   } else if (setupQueue !== undefined) {
     const listing = {

@@ -69,12 +69,9 @@ function handleListing(client, recipient, message) {
 }
 
 function handleQuickReply(client, recipient, message) {
-  const {
-    listingId,
-    sellerId,
-    setupQueue,
-    type
-  } = message.attachments[0].payload;
+  const { listingId, sellerId, setupQueue, type } = JSON.parse(
+    message.quick_reply.payload
+  );
 
   if (type !== undefined) {
     if (type === "buyer") {
@@ -96,8 +93,10 @@ function handleQuickReply(client, recipient, message) {
     createListing(listingId, listing);
 
     listing.has_queue
-      ? promptStart(t.queue.did_add)
-      : client.sendText(recipient, t.queue.did_not_add);
+      ? promptStart(client, recipient, t.queue.did_add)
+      : client
+          .sendText(recipient, t.queue.did_not_add)
+          .catch(err => console.error(err));
   }
 }
 

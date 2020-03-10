@@ -22,10 +22,12 @@ function getMessageType(message) {
       return messageTypes.MULTIPLE;
     }
     const payload = message.attachments[0].payload;
-    if (payload.url.includes("marketplace/item")) {
-      return messageTypes.LISTING;
+    if (payload) {
+      if (payload.url.includes("marketplace/item")) {
+        return messageTypes.LISTING;
+      }
+      return messageTypes.ATTACHMENT;
     }
-    return messageTypes.ATTACHMENT;
   }
   return messageTypes.UNSUPPORTED;
 }

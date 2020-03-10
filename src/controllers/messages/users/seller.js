@@ -1,4 +1,4 @@
-const { db } = require("../../db");
+const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
 /**
@@ -56,20 +56,20 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
     {
       content_type: "text",
       title: t.queue.setup,
-      payload: {
+      payload: JSON.stringify({
         setupQueue: true,
         sellerId,
         listingId
-      }
+      })
     },
     {
       content_type: "text",
       title: t.queue.no_setup,
-      payload: {
+      payload: JSON.stringify({
         setupQueue: false,
         sellerId,
         listingId
-      }
+      })
     }
   ];
   client.sendQuickReplies(recipient, replies, text);

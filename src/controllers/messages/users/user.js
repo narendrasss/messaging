@@ -27,7 +27,9 @@ function promptStart(client, recipient, text) {
       payload: ""
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  client
+    .sendQuickReplies(recipient, replies, text)
+    .catch(err => console.error(err));
 }
 
 /**
@@ -42,21 +44,23 @@ function promptUserCategorization(client, recipient, listingId) {
     {
       content_type: "text",
       title: t.user_categorization.is_seller,
-      payload: {
+      payload: JSON.stringify({
         type: "seller",
         listingId
-      }
+      })
     },
     {
       content_type: "text",
       title: t.user_categorization.is_buyer,
-      payload: {
+      payload: JSON.stringify({
         type: "buyer",
         listingId
-      }
+      })
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  client
+    .sendQuickReplies(recipient, replies, text)
+    .catch(err => console.error(err));
 }
 
 module.exports = { promptStart, promptUserCategorization };

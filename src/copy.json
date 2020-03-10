@@ -2,6 +2,7 @@
   "buyer": {
     "add_self": "Add myself to the queue!",
     "has_queue": "A queue has been setup for this item! There are currently {{numPeople}} currently in the queue.",
+    "message_seller": "The seller does not have a queue set up for this item. Please message the seller directly.",
     "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly.",
     "quit": "Quit",
     "show_faq": "See FAQ's about the item."

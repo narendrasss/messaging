@@ -63,7 +63,7 @@ function handleListing(client, recipient, message) {
         if (has_queue) {
           promptInterestedBuyer(client, recipient, queue);
         } else {
-          // TODO: prompt user to message seller
+          client.sendText(recipient, t.buyer.message_seller);
         }
       } else {
         // TODO: user is seller

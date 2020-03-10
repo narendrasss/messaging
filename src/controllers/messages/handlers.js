@@ -58,9 +58,15 @@ function handleListing(client, recipient, message) {
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
     if (snapshot.val()) {
-      const { seller } = snapshot.val();
+      const { seller, has_queue, queue } = snapshot.val();
       if (seller !== recipient.id) {
-        client.sendText(recipient, "You're a buyer!");
+        if (has_queue) {
+          promptInterestedBuyer(client, recipient, queue);
+        } else {
+          // TODO: prompt user to message seller
+        }
+      } else {
+        // TODO: user is seller
       }
     } else {
       promptUserCategorization(client, recipient, listingId);

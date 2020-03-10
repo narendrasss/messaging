@@ -1,6 +1,10 @@
 {
   "buyer": {
-    "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly."
+    "add_self": "Add myself to the queue!",
+    "has_queue": "A queue has been setup for this item! There are currently {{numPeople}} currently in the queue.",
+    "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly.",
+    "quit": "Quit",
+    "show_faq": "See FAQ's about the item."
   },
   "queue": {
     "did_add": "A queue has been set up! What would you like to do next?",

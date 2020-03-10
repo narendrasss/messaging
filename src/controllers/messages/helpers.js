@@ -41,4 +41,15 @@ function getListingId(message) {
   return id;
 }
 
-module.exports = { getMessageType, getListingId, messageTypes };
+// source: https://stackoverflow.com/questions/43261798/javascript-how-to-use-template-literals-with-json/49369868
+function stringTemplateParser(expression, valueObj) {
+  const templateMatcher = /{{\s?([^{}\s]*)\s?}}/g;
+  return expression.replace(templateMatcher, (...[, value]) => valueObj[value]);
+}
+
+module.exports = {
+  getMessageType,
+  getListingId,
+  messageTypes,
+  stringTemplateParser
+};

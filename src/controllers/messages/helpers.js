@@ -41,6 +41,10 @@ function getListingId(message) {
   return id;
 }
 
+function sendText(client, recipient, text) {
+  client.sendText(recipient, text).catch(err => console.error(err));
+}
+
 // source: https://stackoverflow.com/questions/43261798/javascript-how-to-use-template-literals-with-json/49369868
 function stringTemplateParser(expression, valueObj) {
   const templateMatcher = /{{\s?([^{}\s]*)\s?}}/g;
@@ -51,5 +55,6 @@ module.exports = {
   getMessageType,
   getListingId,
   messageTypes,
+  sendText,
   stringTemplateParser
 };

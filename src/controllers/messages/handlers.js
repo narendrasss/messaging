@@ -1,5 +1,5 @@
 const { db } = require("../../db");
-const { getListingId } = require("./helpers");
+const { getListingId, sendText } = require("./helpers");
 const { promptStart, promptUserCategorization } = require("./users/user");
 const {
   addListing,
@@ -60,11 +60,9 @@ function handleListing(client, recipient, message) {
     if (snapshot.val()) {
       const { seller, has_queue, queue } = snapshot.val();
       if (seller !== recipient.id) {
-        if (has_queue) {
-          promptInterestedBuyer(client, recipient, queue);
-        } else {
-          client.sendText(recipient, t.buyer.message_seller);
-        }
+        has_queue
+          ? promptInterestedBuyer(client, recipient, queue)
+          : sendText(client, recipient, t.buyer.no_queue);
       } else {
         // TODO: user is seller
       }
@@ -81,7 +79,7 @@ function handleQuickReply(client, recipient, message) {
 
   if (type !== undefined) {
     if (type === "buyer") {
-      client.sendText(recipient, t.buyer.no_queue);
+      sendText(client, recipient, t.buyer.no_queue);
     } else if (type === "seller") {
       addListing(recipient.id, listingId);
       promptSetupQueue(client, recipient, recipient.id, listingId);
@@ -100,9 +98,7 @@ function handleQuickReply(client, recipient, message) {
 
     listing.has_queue
       ? promptStart(client, recipient, t.queue.did_add)
-      : client
-          .sendText(recipient, t.queue.did_not_add)
-          .catch(err => console.error(err));
+      : sendText(client, recipient, t.queue.did_not_add);
   }
 }
 

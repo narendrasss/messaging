@@ -64,7 +64,11 @@ function handleListing(client, recipient, message) {
           ? promptInterestedBuyer(client, recipient, queue)
           : sendText(client, recipient, t.buyer.no_queue);
       } else {
-        // TODO: user is seller
+        if (has_queue) {
+          promptSellerListing(client, recipient, queue);
+        } else {
+          // TODO: implement case where user is seller and no queue is set up
+        }
       }
     } else {
       promptUserCategorization(client, recipient, listingId);

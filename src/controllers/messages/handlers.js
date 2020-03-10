@@ -1,5 +1,12 @@
 const { db } = require("../../db");
 const { getListingId } = require("./helpers");
+const { promptStart, promptUserCategorization } = require("./users/user");
+const {
+  addListing,
+  createListing,
+  promptSetupQueue
+} = require("./users/seller");
+const t = require("../../copy.json");
 
 function handleText(client, recipient, message) {
   client.sendText(recipient, message.text);
@@ -56,16 +63,47 @@ function handleListing(client, recipient, message) {
         client.sendText(recipient, "You're a buyer!");
       }
     } else {
-      // TODO: Prompt the user if they are seller or not
-      listings.child(listingId).set({ seller: recipient.id });
-      client.sendText(recipient, "You're the seller!");
+      promptUserCategorization(client, recipient, listingId);
     }
   });
+}
+
+function handleQuickReply(client, recipient, message) {
+  const { listingId, sellerId, setupQueue, type } = JSON.parse(
+    message.quick_reply.payload
+  );
+
+  if (type !== undefined) {
+    if (type === "buyer") {
+      client.sendText(recipient, t.buyer.no_queue);
+    } else if (type === "seller") {
+      addListing(recipient.id, listingId);
+      promptSetupQueue(client, recipient, recipient.id, listingId);
+    } else {
+      // TODO: implement default case
+    }
+  } else if (setupQueue !== undefined) {
+    const listing = {
+      seller: sellerId,
+      has_queue: setupQueue,
+      queue: [],
+      faq: [],
+      price: 0
+    };
+    createListing(listingId, listing);
+
+    listing.has_queue
+      ? promptStart(client, recipient, t.queue.did_add)
+      : client
+          .sendText(recipient, t.queue.did_not_add)
+          .catch(err => console.error(err));
+  }
 }
 
 module.exports = {
   handleAttachments,
   handleDebug,
   handleText,
-  handleListing
+  handleListing,
+  handleQuickReply
 };

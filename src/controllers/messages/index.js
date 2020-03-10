@@ -5,7 +5,8 @@ const handlerMap = {
   [messageTypes.TEXT]: handlers.handleText,
   [messageTypes.DEBUG]: handlers.handleDebug,
   [messageTypes.ATTACHMENT]: handlers.handleAttachments,
-  [messageTypes.LISTING]: handlers.handleListing
+  [messageTypes.LISTING]: handlers.handleListing,
+  [messageTypes.QUICK_REPLY]: handlers.handleQuickReply
 };
 
 function messagesController(client) {

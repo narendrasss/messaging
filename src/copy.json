@@ -1,0 +1,22 @@
+{
+  "buyer": {
+    "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly."
+  },
+  "queue": {
+    "did_add": "A queue has been set up! What would you like to do next?",
+    "did_not_add": "You can set up a queue any time in the future by sharing the post again.",
+    "no_setup": "No thanks.",
+    "question": "Would you like to set up a queue for this item?",
+    "setup": "Yes, setup a queue!"
+  },
+  "start": {
+    "show_interested": "Show all items you're interested in",
+    "show_listings": "Show all your listings",
+    "quit": "Quit"
+  },
+  "user_categorization": {
+    "question": "Are you the seller of this item?",
+    "is_buyer": "I am the buyer!",
+    "is_seller": "I am the seller!"
+  }
+}

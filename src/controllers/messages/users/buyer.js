@@ -11,26 +11,39 @@ const t = require("../../../copy.json");
  *
  * @param {object} client
  * @param {object} recipient
+ * @param {string} listingId
  * @param {array} queue
  */
-function promptInterestedBuyer(client, recipient, queue) {
+function promptInterestedBuyer(client, recipient, listingId, queue) {
   const numPeople = queue.length;
   const text = stringTemplateParser(t.buyer.has_queue, { numPeople });
   const replies = [
     {
       content_type: "text",
       title: t.buyer.add_self,
-      payload: ""
+      payload: JSON.stringify({
+        buyerId: recipient.id,
+        listingId,
+        option: 1
+      })
     },
     {
       content_type: "text",
       title: t.buyer.show_faq,
-      payload: ""
+      payload: JSON.stringify({
+        buyerId: recipient.id,
+        listingId,
+        option: 2
+      })
     },
     {
       content_type: "text",
       title: t.buyer.quit,
-      payload: ""
+      payload: JSON.stringify({
+        buyerId: recipient.id,
+        listingId,
+        option: 3
+      })
     }
   ];
   client.sendQuickReplies(recipient, replies, text);

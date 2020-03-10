@@ -91,36 +91,54 @@ function handleListing(client, recipient, message) {
 
 function handleQuickReply(client, recipient, message) {
   const { payload } = message.quick_reply;
+  switch (payload) {
+    case "add-queue":
+      const ctx = context.getContext(recipient.id);
+      if (ctx) {
+        return addUserToQueue(client, recipient, ctx.data.listingId);
+      }
+      break;
+    case "skip-queue":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "leave-queue":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "show-faq":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "quit":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    default:
+      const { listingId, sellerId, setupQueue, type } = JSON.parse(payload);
 
-  if (payload === "add-queue") {
-    const ctx = context.getContext(recipient.id);
-    if (ctx) {
-      return addUserToQueue(client, recipient, ctx.data.listingId);
-    }
-  }
+      if (type !== undefined) {
+        if (type === "buyer") {
+          sendText(client, recipient, t.buyer.no_queue);
+        } else if (type === "seller") {
+          addListing(recipient.id, listingId);
+          promptSetupQueue(client, recipient, listingId);
+        }
+      } else if (setupQueue !== undefined) {
+        const listing = {
+          seller: sellerId,
+          has_queue: setupQueue,
+          queue: [],
+          faq: [],
+          price: 0
+        };
+        createListing(listingId, listing);
 
-  const { listingId, sellerId, setupQueue, type } = JSON.parse(payload);
-
-  if (type !== undefined) {
-    if (type === "buyer") {
-      sendText(client, recipient, t.buyer.no_queue);
-    } else if (type === "seller") {
-      addListing(recipient.id, listingId);
-      promptSetupQueue(client, recipient, listingId);
-    }
-  } else if (setupQueue !== undefined) {
-    const listing = {
-      seller: sellerId,
-      has_queue: setupQueue,
-      queue: [],
-      faq: [],
-      price: 0
-    };
-    createListing(listingId, listing);
-
-    listing.has_queue
-      ? promptStart(client, recipient, t.queue.did_add)
-      : sendText(client, recipient, t.queue.did_not_add);
+        listing.has_queue
+          ? promptStart(client, recipient, t.queue.did_add)
+          : sendText(client, recipient, t.queue.did_not_add);
+      }
+      break;
   }
 }
 

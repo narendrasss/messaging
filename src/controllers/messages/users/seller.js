@@ -56,7 +56,7 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
       content_type: "text",
       title: t.queue.setup,
       payload: {
-        setupQueue: "YES",
+        setupQueue: true,
         sellerId,
         listingId
       }
@@ -65,7 +65,7 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
       content_type: "text",
       title: t.queue.no_setup,
       payload: {
-        setupQueue: "NO",
+        setupQueue: false,
         sellerId,
         listingId
       }

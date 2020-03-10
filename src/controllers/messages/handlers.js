@@ -76,7 +76,7 @@ function handleQuickReply(client, recipient, message) {
     type
   } = message.attachments[0].payload;
 
-  if (type) {
+  if (type !== undefined) {
     if (type === "buyer") {
       client.sendText(recipient, t.buyer.no_queue);
     } else if (type === "seller") {
@@ -85,10 +85,10 @@ function handleQuickReply(client, recipient, message) {
     } else {
       // TODO: implement default case
     }
-  } else if (setupQueue) {
+  } else if (setupQueue !== undefined) {
     const listing = {
       seller: sellerId,
-      has_queue: setupQueue === "YES",
+      has_queue: setupQueue,
       queue: [],
       faq: [],
       price: 0

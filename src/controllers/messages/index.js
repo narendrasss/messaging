@@ -12,12 +12,18 @@ const handlerMap = {
 function messagesController(client) {
   return function handleMessages(event_type, sender_info, webhook_event) {
     const { message } = webhook_event;
+    console.log(message);
     const recipient = { id: sender_info.value };
     const handler = handlerMap[getMessageType(message)];
     if (!handler) {
       return client.sendText(recipient, "Sorry, we don't support that action.");
     }
-    return handler(client, recipient, message);
+    try {
+      return handler(client, recipient, message);
+    } catch (err) {
+      console.error(err);
+      return client.sendText(recipient, "Oops, something went wrong.");
+    }
   };
 }
 

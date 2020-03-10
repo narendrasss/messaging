@@ -1,6 +1,8 @@
 {
   "buyer": {
-    "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly."
+    "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly.",
+    "add_queue": "Yes, please.",
+    "dont_add_queue": "No thanks!"
   },
   "queue": {
     "did_add": "A queue has been set up! What would you like to do next?",

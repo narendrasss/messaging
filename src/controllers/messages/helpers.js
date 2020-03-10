@@ -41,4 +41,15 @@ function getListingId(message) {
   return id;
 }
 
-module.exports = { getMessageType, getListingId, messageTypes };
+function getQueueMessage(length) {
+  return `There ${length == 1 ? "is" : "are"} currently ${length} ${
+    length == 1 ? "person" : "people"
+  } waiting for this item. Would you like to be added to the queue?`;
+}
+
+module.exports = {
+  getMessageType,
+  getListingId,
+  getQueueMessage,
+  messageTypes
+};

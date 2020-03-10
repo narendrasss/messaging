@@ -1,6 +1,8 @@
 const { db } = require("../../db");
+const context = require("../../context");
 const { getListingId } = require("./helpers");
 const { promptStart, promptUserCategorization } = require("./users/user");
+const { addUserToQueue, promptInterestedBuyer } = require("./users/buyer");
 const {
   addListing,
   createListing,
@@ -57,10 +59,15 @@ function handleListing(client, recipient, message) {
   const listings = db.ref("listings");
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
-    if (snapshot.val()) {
-      const { seller } = snapshot.val();
+    const listing = snapshot.val();
+    if (listing) {
+      const { seller, has_queue, queue } = listing;
       if (seller !== recipient.id) {
-        client.sendText(recipient, "You're a buyer!");
+        if (has_queue) {
+          context.setContext(recipient.id, "buyer-add-queue", { listingId });
+          promptInterestedBuyer(client, recipient, queue);
+        } else {
+        }
       }
     } else {
       promptUserCategorization(client, recipient, listingId);
@@ -69,9 +76,16 @@ function handleListing(client, recipient, message) {
 }
 
 function handleQuickReply(client, recipient, message) {
-  const { listingId, sellerId, setupQueue, type } = JSON.parse(
-    message.quick_reply.payload
-  );
+  const { payload } = message.quick_reply;
+
+  if (payload === "add-queue") {
+    const ctx = context.getContext(recipient.id);
+    if (ctx) {
+      return addUserToQueue(client, recipient, ctx.data.listingId);
+    }
+  }
+
+  const { listingId, sellerId, setupQueue, type } = JSON.parse(payload);
 
   if (type !== undefined) {
     if (type === "buyer") {

@@ -16,7 +16,7 @@
   },
   "seller": {
     "item_sold": "Remove item from listings.",
-    "own_listing": "This is one of your listings! What would you like to do next?",
+    "own_listing": "This is one of your listings!",
     "quit": "Quit",
     "see_queue": "Display users in the queue."
   },

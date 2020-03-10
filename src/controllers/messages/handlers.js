@@ -80,7 +80,7 @@ function handleListing(client, recipient, message) {
         return sendText(client, recipient, t.buyer.no_queue);
       } else {
         if (has_queue) {
-          return promptSellerListing(client, recipient, queue);
+          return promptSellerListing(client, recipient, listing);
         }
         return promptSetupQueue(client, recipient, listingId);
       }

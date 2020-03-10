@@ -1,3 +1,5 @@
+const t = require("../../copy.json");
+
 const messageTypes = {
   DEBUG: "debug",
   TEXT: "text",
@@ -57,6 +59,15 @@ function getQueueMessage(id, queue) {
   } ahead of you.`;
 }
 
+function getSellerStatusMessage(listing) {
+  return (
+    t.seller.own_listing +
+    " " +
+    getQueueMessage(null, listing.queue || []) +
+    " What would you like to do next?"
+  );
+}
+
 function sendText(client, recipient, text) {
   client.sendText(recipient, text).catch(err => console.error(err));
 }
@@ -71,6 +82,7 @@ module.exports = {
   getMessageType,
   getListingId,
   getQueueMessage,
+  getSellerStatusMessage,
   messageTypes,
   sendText,
   stringTemplateParser

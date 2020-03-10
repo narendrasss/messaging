@@ -79,10 +79,9 @@ function promptSellerListing(client, recipient, queue) {
  *
  * @param {object} client
  * @param {object} recipient
- * @param {string} sellerId
  * @param {string} listingId
  */
-function promptSetupQueue(client, recipient, sellerId, listingId) {
+function promptSetupQueue(client, recipient, listingId) {
   const text = t.queue.question;
   const replies = [
     {
@@ -90,7 +89,7 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
       title: t.queue.setup,
       payload: JSON.stringify({
         setupQueue: true,
-        sellerId,
+        sellerId: recipient.id,
         listingId
       })
     },
@@ -99,7 +98,7 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
       title: t.queue.no_setup,
       payload: JSON.stringify({
         setupQueue: false,
-        sellerId,
+        sellerId: recipient.id,
         listingId
       })
     }

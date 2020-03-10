@@ -4,6 +4,7 @@ const { promptStart, promptUserCategorization } = require("./users/user");
 const {
   addListing,
   createListing,
+  promptInterestedBuyer,
   promptSetupQueue
 } = require("./users/seller");
 const t = require("../../copy.json");

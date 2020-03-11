@@ -4,6 +4,7 @@
     "add_queue": "Yes, please.",
     "dont_add_queue": "No thanks!",
     "quit": "Quit",
+    "no_faq": "The seller has not yet set up a FAQ. Please contact the seller directly.",
     "show_faq": "See FAQ",
     "leave_queue": "Leave queue"
   },

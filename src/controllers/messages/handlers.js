@@ -16,6 +16,7 @@ const {
 const {
   addListing,
   createListing,
+  displayQueue,
   promptSellerListing,
   promptSetupQueue,
   promptStart
@@ -132,10 +133,16 @@ function handleQuickReply(client, recipient, message) {
         sendText(client, recipient, message);
       }
       return promptInterestedBuyer(client, recipient, queue);
+    case "display-queue":
+      return displayQueue(client, recipient, queue);
     case "skip-queue":
       return promptInterestedBuyer(client, recipient, queue);
     case "leave-queue":
       return removeUserFromQueue(client, recipient, listingId);
+    case "remove-listing":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
     case "show-listings":
       return showListings(client, recipient);
     case "show-interests":

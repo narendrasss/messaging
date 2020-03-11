@@ -1,4 +1,5 @@
 const { db } = require("../../../db");
+const { getSellerStatusMessage } = require("../helpers");
 const t = require("../../../copy.json");
 
 /**
@@ -43,14 +44,45 @@ function createListing(listingId, listing) {
 // AUTOMATED REPLIES
 
 /**
+ * Tells the seller that this is their own listing and gives them options about how to manage it:
+ * 1. See the queue
+ * 2. Remove item from listings
+ * 3. Quit
+ *
+ * @param {object} client
+ * @param {object} recipient
+ * @param {array} queue
+ */
+function promptSellerListing(client, recipient, listing) {
+  const text = getSellerStatusMessage(listing);
+  const replies = [
+    {
+      content_type: "text",
+      title: t.seller.see_queue,
+      payload: ""
+    },
+    {
+      content_type: "text",
+      title: t.seller.item_sold,
+      payload: ""
+    },
+    {
+      content_type: "text",
+      title: t.seller.quit,
+      payload: ""
+    }
+  ];
+  client.sendQuickReplies(recipient, replies, text);
+}
+
+/**
  * Asks the seller if they would like to setup a queue for the given listing.
  *
  * @param {object} client
  * @param {object} recipient
- * @param {string} sellerId
  * @param {string} listingId
  */
-function promptSetupQueue(client, recipient, sellerId, listingId) {
+function promptSetupQueue(client, recipient, listingId) {
   const text = t.queue.question;
   const replies = [
     {
@@ -58,7 +90,7 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
       title: t.queue.setup,
       payload: JSON.stringify({
         setupQueue: true,
-        sellerId,
+        sellerId: recipient.id,
         listingId
       })
     },
@@ -67,7 +99,7 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
       title: t.queue.no_setup,
       payload: JSON.stringify({
         setupQueue: false,
-        sellerId,
+        sellerId: recipient.id,
         listingId
       })
     }
@@ -75,4 +107,9 @@ function promptSetupQueue(client, recipient, sellerId, listingId) {
   client.sendQuickReplies(recipient, replies, text);
 }
 
-module.exports = { addListing, createListing, promptSetupQueue };
+module.exports = {
+  addListing,
+  createListing,
+  promptSellerListing,
+  promptSetupQueue
+};

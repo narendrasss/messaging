@@ -1,11 +1,18 @@
 const { db } = require("../../db");
-const { getListingId, stringTemplateParser } = require("./helpers");
+const context = require("../../context");
+const { getListingId, getQueueMessage, sendText } = require("./helpers");
 const { promptStart, promptUserCategorization } = require("./users/user");
+const {
+  addUserToQueue,
+  notifyBuyerStatus,
+  promptInterestedBuyer
+} = require("./users/buyer");
 const {
   addListing,
   createListing,
   promptInterestedBuyer,
-  promptSetupQueue
+  promptSetupQueue,
+  promptSellerListing
 } = require("./users/seller");
 const t = require("../../copy.json");
 
@@ -58,108 +65,136 @@ function handleListing(client, recipient, message) {
   const listings = db.ref("listings");
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
-    if (snapshot.val()) {
-      const { seller, has_queue, queue } = snapshot.val();
+    const listing = snapshot.val();
+    if (listing) {
+      const { seller, has_queue, queue } = listing;
       if (seller !== recipient.id) {
         if (has_queue) {
-          promptInterestedBuyer(client, recipient, listingId, queue);
-        } else {
-          // TODO: prompt user to message seller
+          const q = queue || [];
+          if (!q.includes(recipient.id)) {
+            context.setContext(recipient.id, "buyer-add-queue", { listingId });
+            return promptInterestedBuyer(client, recipient, q);
+          }
+          context.setContext(recipient.id, "buyer-status", { listingId });
+          return notifyBuyerStatus(client, recipient, q);
         }
+        return sendText(client, recipient, t.buyer.no_queue);
       } else {
-        // TODO: user is seller
+        if (has_queue) {
+          return promptSellerListing(client, recipient, listing);
+        }
+        return promptSetupQueue(client, recipient, listingId);
       }
-    } else {
-      promptUserCategorization(client, recipient, listingId);
     }
+    return promptUserCategorization(client, recipient, listingId);
   });
 }
 
 function handleQuickReply(client, recipient, message) {
-  const payload = JSON.parse(message.quick_reply.payload);
-  const { buyerId, setupQueue, type } = payload;
-  const { listingId, sellerId, option } = payload;
+  const { payload } = message.quick_reply;
+  switch (payload) {
+    case "add-queue":
+      const ctx = context.getContext(recipient.id);
+      if (ctx) {
+        return addUserToQueue(client, recipient, ctx.data.listingId);
+      }
+      break;
+    case "skip-queue":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "leave-queue":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "show-faq":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "quit":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    default:
+      const { listingId, sellerId, setupQueue, type } = JSON.parse(payload);
 
-  if (type !== undefined) {
-    if (type === "buyer") {
-      client.sendText(recipient, t.buyer.no_queue);
-    } else if (type === "seller") {
-      addListing(recipient.id, listingId);
-      promptSetupQueue(client, recipient, recipient.id, listingId);
-    } else {
-      // TODO: implement default case
-    }
-  } else if (setupQueue !== undefined) {
-    const listing = {
-      seller: sellerId,
-      has_queue: setupQueue,
-      queue: [],
-      faq: [],
-      price: 0
-    };
-    createListing(listingId, listing);
+      if (type !== undefined) {
+        if (type === "buyer") {
+          sendText(client, recipient, t.buyer.no_queue);
+        } else if (type === "seller") {
+          addListing(recipient.id, listingId);
+          promptSetupQueue(client, recipient, listingId);
+        }
+      } else if (setupQueue !== undefined) {
+        const listing = {
+          seller: sellerId,
+          has_queue: setupQueue,
+          queue: [],
+          faq: [],
+          price: 0
+        };
+        createListing(listingId, listing);
 
-    listing.has_queue
-      ? promptStart(client, recipient, t.queue.did_add)
-      : client
-          .sendText(recipient, t.queue.did_not_add)
-          .catch(err => console.error(err));
-  } else if (buyerId !== undefined) {
-    switch (option) {
-      case 1:
-        const listings = db.ref("listings");
-        listings.child(listingId).once(snapshot => {
-          if (snapshot.val()) {
-            const { queue } = snapshot.val();
-            if (!queue.includes(buyerId)) {
-              listings.child(listingId).set({
-                ...snapshot.val(),
-                queue: [...queue, buyerId]
-              });
-              sendText(client, recipient, "You've been added to the queue!");
-            } else {
-              const position = queue.indexOf(buyerId) + 1;
-              const text = stringTemplateParser(
-                "You're already in the queue! You are number {{position}} in line.",
-                { position }
-              );
-              sendText(client, recipient, text);
-            }
-          }
-        });
-        promptInterestedBuyer(client, recipient, listingId, queue);
-        break;
-      case 2:
-        db.ref("listings")
-          .child(listingId)
-          .once(snapshot => {
-            if (snapshot.val()) {
-              const { faq } = snapshot.val();
-
-              let formattedMessage = "";
-              if (faq.length === 0) {
-                formattedMessage +=
-                  "Seller has not set up a FAQ yet. Please contact the seller directly.";
-              } else {
-                for (const { question, answer } in faq) {
-                  formattedMessage += `Question: ${question}\n`;
-                  formattedmessage += `Answer: ${answer}\n`;
+        listing.has_queue
+          ? promptStart(client, recipient, t.queue.did_add)
+          : sendText(client, recipient, t.queue.did_not_add);
+      } else if (buyerId !== undefined) {
+        switch (option) {
+          case 1:
+            const listings = db.ref("listings");
+            listings.child(listingId).once(snapshot => {
+              if (snapshot.val()) {
+                const { queue } = snapshot.val();
+                if (!queue.includes(buyerId)) {
+                  listings.child(listingId).set({
+                    ...snapshot.val(),
+                    queue: [...queue, buyerId]
+                  });
+                  sendText(
+                    client,
+                    recipient,
+                    "You've been added to the queue!"
+                  );
+                } else {
+                  sendText(client, recipient, getQueueMessage(buyerId, queue));
                 }
               }
-              sendText(client, recipient, formattedMessage);
-            }
-          });
-        promptInterestedBuyer(client, recipient, listingId, queue);
-        break;
-      case 3:
-        const text = "To start another workflow, just say hello!";
-        sendText(client, recipient, text);
-        break;
-      default:
-        const text = "Sorry, we don't support that action.";
-        sendText(client, recipient, text);
-        break;
-    }
+            });
+            promptInterestedBuyer(client, recipient, listingId, queue);
+            break;
+          case 2:
+            db.ref("listings")
+              .child(listingId)
+              .once(snapshot => {
+                if (snapshot.val()) {
+                  const { faq } = snapshot.val();
+
+                  let formattedMessage = "";
+                  if (faq.length === 0) {
+                    formattedMessage +=
+                      "Seller has not set up a FAQ yet. Please contact the seller directly.";
+                  } else {
+                    for (const { question, answer } in faq) {
+                      formattedMessage += `Question: ${question}\n`;
+                      formattedmessage += `Answer: ${answer}\n`;
+                    }
+                  }
+                  sendText(client, recipient, formattedMessage);
+                }
+              });
+            promptInterestedBuyer(client, recipient, listingId, queue);
+            break;
+          case 3:
+            const text = "To start another workflow, just say hello!";
+            sendText(client, recipient, text);
+            break;
+          default:
+            const text = "Sorry, we don't support that action.";
+            sendText(client, recipient, text);
+            break;
+        }
+      }
+      break;
   }
 }
 

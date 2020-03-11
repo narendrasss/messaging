@@ -1,3 +1,5 @@
+const t = require("../../copy.json");
+
 const messageTypes = {
   DEBUG: "debug",
   TEXT: "text",
@@ -41,6 +43,35 @@ function getListingId(message) {
   return id;
 }
 
+function getQueueMessage(id, queue) {
+  const index = queue.indexOf(id);
+  const length = queue.length;
+  if (index < 0) {
+    return `There ${length == 1 ? "is" : "are"} currently ${length} ${
+      length == 1 ? "person" : "people"
+    } waiting for this item.`;
+  }
+  if (index === 0) {
+    return "You're first in line.";
+  }
+  return `There are ${index} ${
+    index === 1 ? "person" : "people"
+  } ahead of you.`;
+}
+
+function getSellerStatusMessage(listing) {
+  return (
+    t.seller.own_listing +
+    " " +
+    getQueueMessage(null, listing.queue || []) +
+    " What would you like to do next?"
+  );
+}
+
+function sendText(client, recipient, text) {
+  client.sendText(recipient, text).catch(err => console.error(err));
+}
+
 // source: https://stackoverflow.com/questions/43261798/javascript-how-to-use-template-literals-with-json/49369868
 function stringTemplateParser(expression, valueObj) {
   const templateMatcher = /{{\s?([^{}\s]*)\s?}}/g;
@@ -50,6 +81,9 @@ function stringTemplateParser(expression, valueObj) {
 module.exports = {
   getMessageType,
   getListingId,
+  getQueueMessage,
+  getSellerStatusMessage,
   messageTypes,
+  sendText,
   stringTemplateParser
 };

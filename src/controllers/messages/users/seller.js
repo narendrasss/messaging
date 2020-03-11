@@ -51,18 +51,19 @@ function createListing(listingId, listing) {
  * @param {*} queue
  */
 function displayQueue(client, recipient, queue) {
+  const q = queue || [];
   let message =
     "There " +
-    (queue.length === 1 ? "is 1 person" : `are ${queue.length} people `) +
+    (q.length === 1 ? "is 1 person" : `are ${q.length} people `) +
     "in the queue.\n";
 
-  for (const psid of queue) {
+  for (const psid of q) {
     const { first_name, last_name } = client
       .getUserProfile(psid, ["first_name", "last_name"])
       .then(() => (message += `${first_name} ${last_name}\n`))
       .catch(err => console.error(err));
   }
-  sendText(client, recipient, message.substring(0, -1));
+  sendText(client, recipient, message.substring(0, message.length - 1));
 }
 
 /**

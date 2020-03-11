@@ -2,7 +2,6 @@ const { db } = require("../../db");
 const context = require("../../context");
 const { getListingId, getQueueMessage, sendText } = require("./helpers");
 const {
-  promptStart,
   promptUserCategorization,
   showInterests,
   showListings
@@ -73,6 +72,7 @@ function handleListing(client, recipient, message) {
   const { title } = message.attachments[0].payload;
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
+    context.setContext(recipient.id, "", { listingId, title })
     const listing = snapshot.val();
     if (listing) {
       const { seller, has_queue, queue } = listing;
@@ -80,16 +80,8 @@ function handleListing(client, recipient, message) {
         if (has_queue) {
           const q = queue || [];
           if (!q.includes(recipient.id)) {
-            context.setContext(recipient.id, "buyer-add-queue", {
-              title,
-              listingId
-            });
             return promptInterestedBuyer(client, recipient, q);
           }
-          context.setContext(recipient.id, "buyer-status", {
-            title,
-            listingId
-          });
           return notifyBuyerStatus(client, recipient, q);
         }
         return sendText(client, recipient, t.buyer.no_queue);
@@ -108,58 +100,61 @@ function handleQuickReply(client, recipient, message) {
   const { payload } = message.quick_reply;
   const { data } = context.getContext(recipient.id);
   const { listingId } = data;
-  const { queue, faq } = db.ref(`listings/${listingId}`);
-  switch (payload) {
-    case "buyer":
-      return sendText(client, recipient, t.buyer.no_queue);
-    case "seller":
-      addListing(recipient.id, listingId);
-      return promptSetupQueue(client, recipient, listingId);
-    case "setup-queue":
-      createListing(listingId, {
-        seller: recipient.id,
-        has_queue: true,
-        queue: [],
-        faq: [],
-        price: 0,
-        title: title
-      });
-      return promptStart(client, recipient, t.queue.did_add);
-    case "add-queue":
-      if (!queue.includes(recipient.id)) {
-        addUserToQueue(client, recipient, listingId);
-      } else {
-        const message = getQueueMessage(recipient.id, queue);
-        sendText(client, recipient, message);
+  const listingRef = db.ref(`listings/${listingId}`);
+  listingRef.once("value", snapshot => {
+    const { queue, faq } = snapshot.val()
+    switch (payload) {
+      case "buyer":
+        return sendText(client, recipient, t.buyer.no_queue);
+      case "seller":
+        addListing(recipient.id, listingId);
+        return promptSetupQueue(client, recipient, listingId);
+      case "setup-queue":
+        createListing(listingId, {
+          seller: recipient.id,
+          has_queue: true,
+          queue: [],
+          faq: [],
+          price: 0,
+          title: title
+        });
+        return promptStart(client, recipient, t.queue.did_add);
+      case "add-queue":
+        if (!queue.includes(recipient.id)) {
+          addUserToQueue(client, recipient, listingId);
+        } else {
+          const message = getQueueMessage(recipient.id, queue);
+          sendText(client, recipient, message);
+        }
+        return promptInterestedBuyer(client, recipient, queue);
+      case "display-queue":
+        return displayQueue(client, recipient, queue);
+      case "skip-queue":
+        return promptInterestedBuyer(client, recipient, queue);
+      case "leave-queue":
+        return removeUserFromQueue(client, recipient, listingId);
+      case "remove-listing":
+        // TODO
+        sendText(client, recipient, "Not implemented.");
+        break;
+      case "show-listings":
+        return showListings(client, recipient);
+      case "show-interests":
+        return showInterests(client, recipient);
+      case "show-faq":
+        const formattedMessage = faq.length > 0 ? formatFAQ(faq) : t.buyer.no_faq;
+        sendText(client, recipient, formattedMessage);
+        return promptInterestedBuyer(client, recipient, queue);
+      case "quit":
+        // TODO
+        sendText(client, recipient, "Not implemented.");
+        break;
+      default:
+        // TODO
+        sendText(client, recipient, "Not implemented.");
+        break;
       }
-      return promptInterestedBuyer(client, recipient, queue);
-    case "display-queue":
-      return displayQueue(client, recipient, queue);
-    case "skip-queue":
-      return promptInterestedBuyer(client, recipient, queue);
-    case "leave-queue":
-      return removeUserFromQueue(client, recipient, listingId);
-    case "remove-listing":
-      // TODO
-      sendText(client, recipient, "Not implemented.");
-      break;
-    case "show-listings":
-      return showListings(client, recipient);
-    case "show-interests":
-      return showInterests(client, recipient);
-    case "show-faq":
-      const formattedMessage = faq.length > 0 ? formatFAQ(faq) : t.buyer.no_faq;
-      sendText(client, recipient, formattedMessage);
-      return promptInterestedBuyer(client, recipient, queue);
-    case "quit":
-      // TODO
-      sendText(client, recipient, "Not implemented.");
-      break;
-    default:
-      // TODO
-      sendText(client, recipient, "Not implemented.");
-      break;
-  }
+  })
 }
 
 module.exports = {

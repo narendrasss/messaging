@@ -96,7 +96,6 @@ function _constructTemplate(listings, template_type) {
 }
 
 module.exports = {
-  promptStart,
   promptUserCategorization,
   showInterests,
   showListings

@@ -9,7 +9,7 @@ const t = require("../../../copy.json");
  */
 function formatFAQ(faq) {
   let formattedMessage = "";
-  for (const { question, answer } in faq) {
+  for (const { question, answer } of faq) {
     formattedMessage += `Question: ${question}\n` + `Answer: ${answer}\n\n`;
   }
   return formattedMessage.substring(0, -2);
@@ -85,8 +85,10 @@ function addUserToQueue(client, recipient, listingId) {
   interests.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {
-      val.push(listingId);
-      interests.set(val);
+      if (!val.includes(listingId)) {
+        val.push(listingId);
+        interests.set(val);
+      }
     } else {
       interests.set([listingId]);
     }
@@ -94,8 +96,13 @@ function addUserToQueue(client, recipient, listingId) {
   queue.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {
-      val.push(recipient.id);
-      queue.set(val);
+      if (!val.includes(recipient.id)) {
+        val.push(recipient.id);
+        queue.set(val);
+      } else {
+        const message = getQueueMessage(recipient.id, val);
+        sendText(client, recipient, message);
+      }
     } else {
       queue.set([recipient.id]);
     }

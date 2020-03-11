@@ -95,7 +95,9 @@ function handleQuickReply(client, recipient, message) {
   const { payload } = message.quick_reply;
   const { data } = context.getContext(recipient.id);
   const { listingId } = data;
-  const { queue, faq } = db.ref(`listings/${listingId}`);
+
+  const listingRef = db.ref(`listings/${listingId}`);
+
   switch (payload) {
     case "buyer":
       return sendText(client, recipient, t.buyer.no_queue);
@@ -112,12 +114,7 @@ function handleQuickReply(client, recipient, message) {
       });
       return promptStart(client, recipient, t.queue.did_add);
     case "add-queue":
-      if (!queue.includes(recipient.id)) {
-        addUserToQueue(client, recipient, listingId);
-      } else {
-        const message = getQueueMessage(recipient.id, queue);
-        sendText(client, recipient, message);
-      }
+      addUserToQueue(client, recipient, listingId);
       return promptInterestedBuyer(client, recipient, queue);
     case "skip-queue":
       return promptInterestedBuyer(client, recipient, queue);
@@ -131,9 +128,18 @@ function handleQuickReply(client, recipient, message) {
       // TODO
       sendText(client, recipient, "Not implemented.");
     case "show-faq":
-      const formattedMessage = faq.length > 0 ? formatFAQ(faq) : t.buyer.no_faq;
-      sendText(client, recipient, formattedMessage);
-      return promptInterestedBuyer(client, recipient, queue);
+      listingRef.once("value", snapshot => {
+        const val = snapshot.val();
+        if (val) {
+          const { faq, queue } = val;
+          if (faq) {
+            sendText(client, recipient, formatFAQ(faq));
+          } else {
+            sendText(client, recipient, t.buyer.no_faq);
+          }
+          return promptInterestedBuyer(client, recipient, queue || []);
+        }
+      });
     case "quit":
       // TODO
       sendText(client, recipient, "Not implemented.");

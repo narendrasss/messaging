@@ -103,9 +103,33 @@ function addUserToQueue(client, recipient, listingId) {
   });
 }
 
+/**
+ * If the user is in the queue, removes them from the queue. Otherwise, queue remains intact.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ * @param {string} listingId
+ */
+function removeUserFromQueue(client, recipient, listingId) {
+  const { queue } = db.ref(`listings/${listingId}`);
+  queue.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const position = val.indexOf(recipient.id);
+      if (position < 0) {
+        sendText(client, recipient, t.buyer.not_in_queue);
+      } else {
+        queue.set(val.splice(position, 1));
+        sendText(client, recipient, t.buyer.remove_queue);
+      }
+    }
+  });
+}
+
 module.exports = {
   addUserToQueue,
   formatFAQ,
   notifyBuyerStatus,
-  promptInterestedBuyer
+  promptInterestedBuyer,
+  removeUserFromQueue
 };

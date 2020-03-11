@@ -5,7 +5,8 @@ const { promptUserCategorization } = require("./users/user");
 const {
   addUserToQueue,
   notifyBuyerStatus,
-  promptInterestedBuyer
+  promptInterestedBuyer,
+  removeUserFromQueue
 } = require("./users/buyer");
 const {
   addListing,
@@ -95,7 +96,6 @@ function handleQuickReply(client, recipient, message) {
   const { data } = context.getContext(recipient.id);
   const { listingId } = data;
   const { queue, faq } = db.ref(`listings/${listingId}`);
-
   switch (payload) {
     case "buyer":
       return sendText(client, recipient, t.buyer.no_queue);
@@ -122,9 +122,7 @@ function handleQuickReply(client, recipient, message) {
     case "skip-queue":
       return promptInterestedBuyer(client, recipient, queue);
     case "leave-queue":
-      // TODO
-      sendText(client, recipient, "Not implemented.");
-      break;
+      return removeUserFromQueue(client, recipient, listingId);
     case "show-listings":
       // TODO
       sendText(client, recipient, "Not implemented.");

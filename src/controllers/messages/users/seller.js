@@ -44,6 +44,36 @@ function createListing(listingId, listing) {
 // AUTOMATED REPLIES
 
 /**
+ * Asks the user what they would like to do next.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ * @param {string} text
+ */
+function promptStart(client, recipient, text) {
+  const replies = [
+    {
+      content_type: "text",
+      title: t.start.show_listings,
+      payload: "show-listings"
+    },
+    {
+      content_type: "text",
+      title: t.start.show_interested,
+      payload: "show-interests"
+    },
+    {
+      content_type: "text",
+      title: t.start.quit,
+      payload: "quit"
+    }
+  ];
+  client
+    .sendQuickReplies(recipient, replies, text)
+    .catch(err => console.error(err));
+}
+
+/**
  * Tells the seller that this is their own listing and gives them options about how to manage it:
  * 1. See the queue
  * 2. Remove item from listings
@@ -88,20 +118,12 @@ function promptSetupQueue(client, recipient, listingId) {
     {
       content_type: "text",
       title: t.queue.setup,
-      payload: JSON.stringify({
-        setupQueue: true,
-        sellerId: recipient.id,
-        listingId
-      })
+      payload: "setup-queue"
     },
     {
       content_type: "text",
       title: t.queue.no_setup,
-      payload: JSON.stringify({
-        setupQueue: false,
-        sellerId: recipient.id,
-        listingId
-      })
+      payload: "skip-queue"
     }
   ];
   client.sendQuickReplies(recipient, replies, text);

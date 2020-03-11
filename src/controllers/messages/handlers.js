@@ -97,6 +97,20 @@ function handleQuickReply(client, recipient, message) {
   const { queue, faq } = db.ref(`listings/${listingId}`);
 
   switch (payload) {
+    case "buyer":
+      return sendText(client, recipient, t.buyer.no_queue);
+    case "seller":
+      addListing(recipient.id, listingId);
+      return promptSetupQueue(client, recipient, listingId);
+    case "setup-queue":
+      createListing(listingId, {
+        seller: recipient.id,
+        has_queue: true,
+        queue: [],
+        faq: [],
+        price: 0
+      });
+      return promptStart(client, recipient, t.queue.did_add);
     case "add-queue":
       if (!queue.includes(recipient.id)) {
         addUserToQueue(client, recipient, listingId);
@@ -111,6 +125,13 @@ function handleQuickReply(client, recipient, message) {
       // TODO
       sendText(client, recipient, "Not implemented.");
       break;
+    case "show-listings":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "show-interests":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
     case "show-faq":
       const formattedMessage = faq.length > 0 ? formatFAQ(faq) : t.buyer.no_faq;
       sendText(client, recipient, formattedMessage);
@@ -120,29 +141,8 @@ function handleQuickReply(client, recipient, message) {
       sendText(client, recipient, "Not implemented.");
       break;
     default:
-      const { listingId, sellerId, setupQueue, type } = JSON.parse(payload);
-
-      if (type !== undefined) {
-        if (type === "buyer") {
-          sendText(client, recipient, t.buyer.no_queue);
-        } else if (type === "seller") {
-          addListing(recipient.id, listingId);
-          promptSetupQueue(client, recipient, listingId);
-        }
-      } else if (setupQueue !== undefined) {
-        const listing = {
-          seller: sellerId,
-          has_queue: setupQueue,
-          queue: [],
-          faq: [],
-          price: 0
-        };
-        createListing(listingId, listing);
-
-        listing.has_queue
-          ? promptStart(client, recipient, t.queue.did_add)
-          : sendText(client, recipient, t.queue.did_not_add);
-      }
+      // TODO
+      sendText(client, recipient, "Not implemented.");
       break;
   }
 }

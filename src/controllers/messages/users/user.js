@@ -33,9 +33,10 @@ function promptUserCategorization(client, recipient, listingId) {
 /**
  * Displays the listings that a user is on a queue for.
  *
+ * @param {object} client
  * @param {object} recipient
  */
-function showInterests(recipient) {
+function showInterests(client, recipient) {
   const interests = db.ref(`users/${recipient.id}/listings_sale`);
   const template = _constructTemplate(interests, "generic");
   return client.sendTemplate(recipient, template);
@@ -44,9 +45,10 @@ function showInterests(recipient) {
 /**
  * Displays the listings that a user has a queue set up for.
  *
+ * @param {object} client
  * @param {object} recipient
  */
-function showListings(recipient) {
+function showListings(client, recipient) {
   const listings = db.ref(`users/${recipient.id}/listings_sale`);
   const template = _constructTemplate(listings, "generic");
   return client.sendTemplate(recipient, template);

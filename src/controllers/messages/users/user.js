@@ -1,3 +1,4 @@
+const { db } = require("../../../db");
 const context = require("../../../context");
 const t = require("../../../copy.json");
 
@@ -29,4 +30,60 @@ function promptUserCategorization(client, recipient, listingId) {
     .catch(err => console.error(err));
 }
 
-module.exports = { promptUserCategorization };
+/**
+ * Displays the listings that a user is on a queue for.
+ *
+ * @param {object} recipient
+ */
+function showInterests(recipient) {
+  const interests = db.ref(`users/${recipient.id}/listings_sale`);
+  const template = _constructTemplate(interests, "generic");
+  return client.sendTemplate(recipient, template);
+}
+
+/**
+ * Displays the listings that a user has a queue set up for.
+ *
+ * @param {object} recipient
+ */
+function showListings(recipient) {
+  const listings = db.ref(`users/${recipient.id}/listings_sale`);
+  const template = _constructTemplate(listings, "generic");
+  return client.sendTemplate(recipient, template);
+}
+
+/**
+ * Private helper that constructs a template object to be used for client.sendTemplate.
+ *
+ * @param {array} listings
+ * @param {string} template_type
+ */
+function _constructTemplate(listings, template_type) {
+  const elements = [];
+  for (const listing of listings) {
+    const title = listing.title;
+    const id = listing.listingId;
+    elements.push({
+      title,
+      default_action: {
+        type: "web_url",
+        url: `https://www.facebook.com/marketplace/item/${id}/`
+      },
+      buttons: [
+        {
+          type: "web_url",
+          url: `https://www.facebook.com/marketplace/item/${id}/`,
+          title: "View Listing"
+        }
+      ]
+    });
+  }
+  return { template_type, elements };
+}
+
+module.exports = {
+  promptStart,
+  promptUserCategorization,
+  showInterests,
+  showListings
+};

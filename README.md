@@ -12,7 +12,8 @@ Example DB instance:
       "has_queue": true,
       "queue": ["user2"],
       "faq": [],
-      "price": 100
+      "price": 100,
+      "title": "Water bottle"
     }
   },
   "messages": {

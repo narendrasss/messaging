@@ -111,7 +111,7 @@ function addUserToQueue(client, recipient, listingId) {
  * @param {string} listingId
  */
 function removeUserFromQueue(client, recipient, listingId) {
-  const { queue } = db.ref(`listings/${listingId}`);
+  const queue = db.ref(`listings/${listingId}/queue`);
   queue.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {

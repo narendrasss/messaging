@@ -1,7 +1,11 @@
 const { db } = require("../../db");
 const context = require("../../context");
 const { getListingId, getQueueMessage, sendText } = require("./helpers");
-const { promptUserCategorization } = require("./users/user");
+const {
+  promptUserCategorization,
+  showInterests,
+  showListings
+} = require("./users/user");
 const {
   addUserToQueue,
   notifyBuyerStatus,
@@ -64,6 +68,7 @@ function handleAttachments(client, recipient, message) {
 
 function handleListing(client, recipient, message) {
   const listings = db.ref("listings");
+  const { title } = message.attachments[0].payload;
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
     const listing = snapshot.val();
@@ -73,10 +78,16 @@ function handleListing(client, recipient, message) {
         if (has_queue) {
           const q = queue || [];
           if (!q.includes(recipient.id)) {
-            context.setContext(recipient.id, "buyer-add-queue", { listingId });
+            context.setContext(recipient.id, "buyer-add-queue", {
+              title,
+              listingId
+            });
             return promptInterestedBuyer(client, recipient, q);
           }
-          context.setContext(recipient.id, "buyer-status", { listingId });
+          context.setContext(recipient.id, "buyer-status", {
+            title,
+            listingId
+          });
           return notifyBuyerStatus(client, recipient, q);
         }
         return sendText(client, recipient, t.buyer.no_queue);
@@ -87,6 +98,7 @@ function handleListing(client, recipient, message) {
         return promptSetupQueue(client, recipient, listingId);
       }
     }
+    context.setContext(recipient.id, "categorize", { listingId, title });
     return promptUserCategorization(client, recipient, listingId);
   });
 }
@@ -110,7 +122,8 @@ function handleQuickReply(client, recipient, message) {
         has_queue: true,
         queue: [],
         faq: [],
-        price: 0
+        price: 0,
+        title: data.title
       });
       return promptStart(client, recipient, t.queue.did_add);
     case "add-queue":
@@ -121,12 +134,9 @@ function handleQuickReply(client, recipient, message) {
     case "leave-queue":
       return removeUserFromQueue(client, recipient, listingId);
     case "show-listings":
-      // TODO
-      sendText(client, recipient, "Not implemented.");
-      break;
+      return showListings(client, recipient);
     case "show-interests":
-      // TODO
-      sendText(client, recipient, "Not implemented.");
+      return showInterests(client, recipient);
     case "show-faq":
       listingRef.once("value", snapshot => {
         const val = snapshot.val();

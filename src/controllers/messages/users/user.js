@@ -1,3 +1,4 @@
+const { db } = require("../../../db");
 const context = require("../../../context");
 const t = require("../../../copy.json");
 
@@ -10,7 +11,6 @@ const t = require("../../../copy.json");
  * @param {object} recipient
  */
 function promptUserCategorization(client, recipient, listingId) {
-  context.setContext(recipient.id, "categorize", { listingId });
   const text = t.user_categorization.question;
   const replies = [
     {
@@ -29,4 +29,76 @@ function promptUserCategorization(client, recipient, listingId) {
     .catch(err => console.error(err));
 }
 
-module.exports = { promptUserCategorization };
+/**
+ * Displays the listings that a user is on a queue for.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ */
+function showInterests(client, recipient) {
+  const user = db.ref(`users/${recipient.id}`);
+  user.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const { listings_buy } = val;
+      const template = _constructTemplate(listings_buy, "generic");
+      return client.sendTemplate(recipient, template);
+    }
+  });
+}
+
+/**
+ * Displays the listings that a user has a queue set up for.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ */
+function showListings(client, recipient) {
+  const user = db.ref(`users/${recipient.id}`);
+  user.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const { listings_sale } = val;
+      _constructTemplate(listings_sale, "generic").then(template => {
+        client.sendTemplate(recipient, template).catch(err => console.error(err));
+      })
+    }
+  });
+}
+
+/**
+ * Private helper that constructs a template object to be used for client.sendTemplate.
+ *
+ * @param {array} listings
+ * @param {string} template_type
+ */
+function _constructTemplate(listings, template_type) {
+  const elements = [];
+  for (const listing of listings) {
+    elements.push(db.ref(`listings/${listing}`).once("value").then(snapshot => {
+      const val = snapshot.val();
+      const title = val.title;
+      return {
+        title,
+        default_action: {
+          type: "web_url",
+          url: `https://www.facebook.com/marketplace/item/${listing}/`
+        },
+        buttons: [
+          {
+            type: "web_url",
+            url: `https://www.facebook.com/marketplace/item/${listing}/`,
+            title: "View Listing"
+          }
+        ]
+      }
+    }))
+  }
+  return Promise.all(elements).then(el => ({ template_type, elements: el.filter(e => e.title !== undefined) }))
+}
+
+module.exports = {
+  promptUserCategorization,
+  showInterests,
+  showListings
+};

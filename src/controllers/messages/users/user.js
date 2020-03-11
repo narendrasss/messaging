@@ -37,9 +37,15 @@ function promptUserCategorization(client, recipient, listingId) {
  * @param {object} recipient
  */
 function showInterests(client, recipient) {
-  const interests = db.ref(`users/${recipient.id}/listings_sale`);
-  const template = _constructTemplate(interests, "generic");
-  return client.sendTemplate(recipient, template);
+  const user = db.ref(`users/${recipient.id}`);
+  user.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const { listings_buy } = val;
+      const template = _constructTemplate(listings_buy, "generic");
+      return client.sendTemplate(recipient, template);
+    }
+  });
 }
 
 /**
@@ -49,9 +55,15 @@ function showInterests(client, recipient) {
  * @param {object} recipient
  */
 function showListings(client, recipient) {
-  const listings = db.ref(`users/${recipient.id}/listings_sale`);
-  const template = _constructTemplate(listings, "generic");
-  return client.sendTemplate(recipient, template);
+  const user = db.ref(`users/${recipient.id}`);
+  user.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const { listings_sale } = val;
+      const template = _constructTemplate(listings_sale, "generic");
+      return client.sendTemplate(recipient, template);
+    }
+  });
 }
 
 /**

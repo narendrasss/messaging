@@ -2,7 +2,6 @@ const { db } = require("../../db");
 const context = require("../../context");
 const { getListingId, getQueueMessage, sendText } = require("./helpers");
 const {
-  promptStart,
   promptUserCategorization,
   showInterests,
   showListings
@@ -99,6 +98,7 @@ function handleListing(client, recipient, message) {
         return promptSetupQueue(client, recipient, listingId);
       }
     }
+    context.setContext(recipient.id, "categorize", { listingId, title });
     return promptUserCategorization(client, recipient, listingId);
   });
 }
@@ -121,7 +121,7 @@ function handleQuickReply(client, recipient, message) {
         queue: [],
         faq: [],
         price: 0,
-        title: title
+        title: data.title
       });
       return promptStart(client, recipient, t.queue.did_add);
     case "add-queue":

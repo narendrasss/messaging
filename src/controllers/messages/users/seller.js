@@ -1,4 +1,5 @@
 const { db } = require("../../../db");
+const { getSellerStatusMessage } = require("../helpers");
 const t = require("../../../copy.json");
 
 /**
@@ -52,8 +53,8 @@ function createListing(listingId, listing) {
  * @param {object} recipient
  * @param {array} queue
  */
-function promptSellerListing(client, recipient, queue) {
-  const text = t.seller.own_listing;
+function promptSellerListing(client, recipient, listing) {
+  const text = getSellerStatusMessage(listing);
   const replies = [
     {
       content_type: "text",

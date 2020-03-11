@@ -1,11 +1,17 @@
 const { db } = require("../../db");
+const context = require("../../context");
 const { getListingId, sendText } = require("./helpers");
 const { promptStart, promptUserCategorization } = require("./users/user");
 const {
+  addUserToQueue,
+  notifyBuyerStatus,
+  promptInterestedBuyer
+} = require("./users/buyer");
+const {
   addListing,
   createListing,
-  promptInterestedBuyer,
-  promptSetupQueue
+  promptSetupQueue,
+  promptSellerListing
 } = require("./users/seller");
 const t = require("../../copy.json");
 
@@ -58,48 +64,81 @@ function handleListing(client, recipient, message) {
   const listings = db.ref("listings");
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
-    if (snapshot.val()) {
-      const { seller, has_queue, queue } = snapshot.val();
+    const listing = snapshot.val();
+    if (listing) {
+      const { seller, has_queue, queue } = listing;
       if (seller !== recipient.id) {
-        has_queue
-          ? promptInterestedBuyer(client, recipient, queue)
-          : sendText(client, recipient, t.buyer.no_queue);
+        if (has_queue) {
+          const q = queue || [];
+          if (!q.includes(recipient.id)) {
+            context.setContext(recipient.id, "buyer-add-queue", { listingId });
+            return promptInterestedBuyer(client, recipient, q);
+          }
+          context.setContext(recipient.id, "buyer-status", { listingId });
+          return notifyBuyerStatus(client, recipient, q);
+        }
+        return sendText(client, recipient, t.buyer.no_queue);
       } else {
-        has_queue
-          ? promptSellerListing(client, recipient, queue)
-          : promptSetupQueue(client, recipient, listingId);
+        if (has_queue) {
+          return promptSellerListing(client, recipient, listing);
+        }
+        return promptSetupQueue(client, recipient, listingId);
       }
-    } else {
-      promptUserCategorization(client, recipient, listingId);
     }
+    return promptUserCategorization(client, recipient, listingId);
   });
 }
 
 function handleQuickReply(client, recipient, message) {
-  const { listingId, sellerId, setupQueue, type } = JSON.parse(
-    message.quick_reply.payload
-  );
+  const { payload } = message.quick_reply;
+  switch (payload) {
+    case "add-queue":
+      const ctx = context.getContext(recipient.id);
+      if (ctx) {
+        return addUserToQueue(client, recipient, ctx.data.listingId);
+      }
+      break;
+    case "skip-queue":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "leave-queue":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "show-faq":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    case "quit":
+      // TODO
+      sendText(client, recipient, "Not implemented.");
+      break;
+    default:
+      const { listingId, sellerId, setupQueue, type } = JSON.parse(payload);
 
-  if (type !== undefined) {
-    if (type === "buyer") {
-      sendText(client, recipient, t.buyer.no_queue);
-    } else if (type === "seller") {
-      addListing(recipient.id, listingId);
-      promptSetupQueue(client, recipient, listingId);
-    }
-  } else if (setupQueue !== undefined) {
-    const listing = {
-      seller: sellerId,
-      has_queue: setupQueue,
-      queue: [],
-      faq: [],
-      price: 0
-    };
-    createListing(listingId, listing);
+      if (type !== undefined) {
+        if (type === "buyer") {
+          sendText(client, recipient, t.buyer.no_queue);
+        } else if (type === "seller") {
+          addListing(recipient.id, listingId);
+          promptSetupQueue(client, recipient, listingId);
+        }
+      } else if (setupQueue !== undefined) {
+        const listing = {
+          seller: sellerId,
+          has_queue: setupQueue,
+          queue: [],
+          faq: [],
+          price: 0
+        };
+        createListing(listingId, listing);
 
-    listing.has_queue
-      ? promptStart(client, recipient, t.queue.did_add)
-      : sendText(client, recipient, t.queue.did_not_add);
+        listing.has_queue
+          ? promptStart(client, recipient, t.queue.did_add)
+          : sendText(client, recipient, t.queue.did_not_add);
+      }
+      break;
   }
 }
 

@@ -1,3 +1,4 @@
+const context = require("../../../context");
 const t = require("../../../copy.json");
 
 // AUTOMATED REPLIES
@@ -39,6 +40,7 @@ function promptStart(client, recipient, text) {
  * @param {object} recipient
  */
 function promptUserCategorization(client, recipient, listingId) {
+  context.setContext(recipient.id, "categorize", { listingId });
   const text = t.user_categorization.question;
   const replies = [
     {

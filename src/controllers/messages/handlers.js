@@ -137,9 +137,9 @@ function handleQuickReply(client, recipient, message) {
     case "leave-queue":
       return removeUserFromQueue(client, recipient, listingId);
     case "show-listings":
-      return showListings(recipient);
+      return showListings(client, recipient);
     case "show-interests":
-      return showInterests(recipient);
+      return showInterests(client, recipient);
     case "show-faq":
       const formattedMessage = faq.length > 0 ? formatFAQ(faq) : t.buyer.no_faq;
       sendText(client, recipient, formattedMessage);

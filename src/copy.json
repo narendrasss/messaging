@@ -1,6 +1,7 @@
 {
   "buyer": {
     "no_queue": "The seller has not yet set up a queue for this item. Please contact the seller directly.",
+    "success_add_queue": "Great! You've been added to the queue.",
     "add_queue": "Yes, please.",
     "dont_add_queue": "No thanks!",
     "quit": "Quit",
@@ -12,6 +13,7 @@
     "did_not_add": "You can set up a queue any time in the future by sharing the post again.",
     "no_setup": "No thanks.",
     "question": "Would you like to set up a queue for this item?",
+    "buyer_question": "Would you like to be added to the queue?",
     "setup": "Yes, setup a queue!"
   },
   "seller": {

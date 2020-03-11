@@ -44,12 +44,13 @@ function promptInterestedBuyer(client, recipient, queue) {
       payload: "skip-queue"
     }
   ];
-  sendText(text);
-  client
-    .sendQuickReplies(
-      recipient,
-      replies,
-      "Would you like to be added to the queue?"
+  sendText(client, recipient, text)
+    .then(() =>
+      client.sendQuickReplies(
+        recipient,
+        replies,
+        "Would you like to be added to the queue?"
+      )
     )
     .catch(err => console.error(err));
 }
@@ -110,9 +111,34 @@ function addUserToQueue(client, recipient, listingId) {
   });
 }
 
+/**
+ * If the user is in the queue, removes them from the queue. Otherwise, queue remains intact.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ * @param {string} listingId
+ */
+function removeUserFromQueue(client, recipient, listingId) {
+  const queue = db.ref(`listings/${listingId}/queue`);
+  queue.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const position = val.indexOf(recipient.id);
+      if (position < 0) {
+        sendText(client, recipient, t.buyer.not_in_queue);
+      } else {
+        val.splice(position, 1);
+        queue.set(val);
+        sendText(client, recipient, t.buyer.remove_queue);
+      }
+    }
+  });
+}
+
 module.exports = {
   addUserToQueue,
   formatFAQ,
   notifyBuyerStatus,
-  promptInterestedBuyer
+  promptInterestedBuyer,
+  removeUserFromQueue
 };

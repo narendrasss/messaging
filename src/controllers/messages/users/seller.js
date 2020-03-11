@@ -56,12 +56,11 @@ function displayQueue(client, recipient, queue) {
     (queue.length === 1 ? "is 1 person" : `are ${queue.length} people `) +
     "in the queue.\n";
 
-  for (const psid in queue) {
-    const { first_name, last_name } = client.getUserProfile(psid, [
-      "first_name",
-      "last_name"
-    ]);
-    message += `${first_name} ${last_name}\n`;
+  for (const psid of queue) {
+    const { first_name, last_name } = client
+      .getUserProfile(psid, ["first_name", "last_name"])
+      .then(() => (message += `${first_name} ${last_name}\n`))
+      .catch(err => console.error(err));
   }
   sendText(client, recipient, message.substring(0, -1));
 }

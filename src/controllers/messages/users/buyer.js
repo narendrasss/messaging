@@ -44,12 +44,13 @@ function promptInterestedBuyer(client, recipient, queue) {
       payload: "skip-queue"
     }
   ];
-  sendText(text);
-  client
-    .sendQuickReplies(
-      recipient,
-      replies,
-      "Would you like to be added to the queue?"
+  sendText(client, recipient, text)
+    .then(() =>
+      client.sendQuickReplies(
+        recipient,
+        replies,
+        "Would you like to be added to the queue?"
+      )
     )
     .catch(err => console.error(err));
 }
@@ -126,7 +127,8 @@ function removeUserFromQueue(client, recipient, listingId) {
       if (position < 0) {
         sendText(client, recipient, t.buyer.not_in_queue);
       } else {
-        queue.set(val.splice(position, 1));
+        val.splice(position, 1);
+        queue.set(val);
         sendText(client, recipient, t.buyer.remove_queue);
       }
     }

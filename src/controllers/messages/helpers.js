@@ -44,8 +44,9 @@ function getListingId(message) {
 }
 
 function getQueueMessage(id, queue) {
-  const index = queue.indexOf(id);
-  const length = queue.length;
+  const q = queue || [];
+  const index = q.indexOf(id);
+  const length = q.length;
   if (index < 0) {
     return `There ${length == 1 ? "is" : "are"} currently ${length} ${
       length == 1 ? "person" : "people"
@@ -54,8 +55,8 @@ function getQueueMessage(id, queue) {
   if (index === 0) {
     return "You're first in line.";
   }
-  return `There are ${index} ${
-    index === 1 ? "person" : "people"
+  return `There ${
+    index === 1 ? "is 1 person" : `are ${index} people`
   } ahead of you.`;
 }
 
@@ -69,7 +70,7 @@ function getSellerStatusMessage(listing) {
 }
 
 function sendText(client, recipient, text) {
-  client.sendText(recipient, text).catch(err => console.error(err));
+  return client.sendText(recipient, text).catch(err => console.error(err));
 }
 
 // source: https://stackoverflow.com/questions/43261798/javascript-how-to-use-template-literals-with-json/49369868

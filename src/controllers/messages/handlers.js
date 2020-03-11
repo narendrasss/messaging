@@ -1,7 +1,7 @@
 const { db } = require("../../db");
 const context = require("../../context");
 const { getListingId, getQueueMessage, sendText } = require("./helpers");
-const { promptStart, promptUserCategorization } = require("./users/user");
+const { promptUserCategorization } = require("./users/user");
 const {
   addUserToQueue,
   notifyBuyerStatus,
@@ -10,9 +10,9 @@ const {
 const {
   addListing,
   createListing,
-  promptInterestedBuyer,
+  promptSellerListing,
   promptSetupQueue,
-  promptSellerListing
+  promptStart
 } = require("./users/seller");
 const t = require("../../copy.json");
 

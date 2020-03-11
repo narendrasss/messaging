@@ -29,4 +29,4 @@ function promptUserCategorization(client, recipient, listingId) {
     .catch(err => console.error(err));
 }
 
-module.exports = { promptStart, promptUserCategorization };
+module.exports = { promptUserCategorization };

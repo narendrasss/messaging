@@ -133,5 +133,6 @@ module.exports = {
   addListing,
   createListing,
   promptSellerListing,
-  promptSetupQueue
+  promptSetupQueue,
+  promptStart
 };

@@ -21,7 +21,9 @@ const {
   addListing,
   createListing,
   displayQueue,
+  setupFAQ,
   promptSellerListing,
+  promptSetupFAQ,
   promptSetupQueue,
   promptStart
 } = require("./users/seller");
@@ -94,7 +96,7 @@ function handleListing(client, recipient, message) {
         if (has_queue) {
           return promptSellerListing(client, recipient, listing);
         }
-        return promptSetupQueue(client, recipient, listingId);
+        return promptSetupQueue(client, recipient);
       }
     }
     context.setContext(recipient.id, "categorize", { listingId, title });
@@ -117,7 +119,12 @@ function handleQuickReply(client, recipient, message) {
         return sendText(client, recipient, t.buyer.no_queue);
       case "seller":
         addListing(recipient.id, listingId);
-        return promptSetupQueue(client, recipient, listingId);
+        promptSetupQueue(client, recipient);
+        return promptSetupFAQ(client, recipient);
+      case "setup-faq":
+        return setupFAQ(client, recipient, listingId);
+      case "skip-faq":
+        return promptStart(client, recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
         createListing(listingId, {
           seller: recipient.id,

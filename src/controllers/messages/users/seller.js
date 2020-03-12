@@ -66,6 +66,8 @@ function displayQueue(client, recipient, queue) {
   sendText(client, recipient, message.substring(0, message.length - 1));
 }
 
+function setupFAQ(client, recipient, listingId) {}
+
 /**
  * Asks the user what they would like to do next.
  *
@@ -129,13 +131,35 @@ function promptSellerListing(client, recipient, listing) {
 }
 
 /**
- * Asks the seller if they would like to setup a queue for the given listing.
+ * Asks the seller if they would like to setup a FAQ for their listing.
  *
  * @param {object} client
  * @param {object} recipient
- * @param {string} listingId
  */
-function promptSetupQueue(client, recipient, listingId) {
+function promptSetupFAQ(client, recipient) {
+  const text = t.faq.question;
+  const replies = [
+    {
+      content_type: "text",
+      title: t.faq.setup,
+      payload: "setup-faq"
+    },
+    {
+      content_type: "text",
+      title: t.faq.skip,
+      payload: "skip-faq"
+    }
+  ];
+  client.sendQuickReplies(recipient, replies, text);
+}
+
+/**
+ * Asks the seller if they would like to setup a queue for their listing.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ */
+function promptSetupQueue(client, recipient) {
   const text = t.queue.question;
   const replies = [
     {
@@ -156,7 +180,9 @@ module.exports = {
   addListing,
   createListing,
   displayQueue,
+  setupFAQ,
   promptSellerListing,
+  promptSetupFAQ,
   promptSetupQueue,
   promptStart
 };

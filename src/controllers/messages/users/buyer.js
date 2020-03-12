@@ -44,15 +44,12 @@ function promptInterestedBuyer(client, recipient, queue) {
       payload: "skip-queue"
     }
   ];
-  sendText(client, recipient, text)
-    .then(() =>
-      client.sendQuickReplies(
-        recipient,
-        replies,
-        "Would you like to be added to the queue?"
-      )
+  sendText(client, recipient, text);
+  client.sendQuickReplies(
+      recipient,
+      replies,
+      t.queue.buyer_question
     )
-    .catch(err => console.error(err));
 }
 
 function notifyBuyerStatus(client, recipient, queue) {
@@ -107,7 +104,7 @@ function addUserToQueue(client, recipient, listingId) {
     } else {
       queue.set([recipient.id]);
     }
-    sendText(client, recipient, "Great! You've been added to the queue.");
+    sendText(client, recipient, t.buyer.success_add_queue);
   });
 }
 

@@ -83,6 +83,10 @@ function setSellerPrice(listingId, price) {
   });
 }
 
+function setQueue(listingId, hasQueue) {
+  return db.ref(`listings/${listingId}/has_queue`).set(hasQueue);
+}
+
 // AUTOMATED REPLIES
 
 /**
@@ -240,5 +244,6 @@ module.exports = {
   promptSetupFAQ,
   promptSetupQueue,
   promptStart,
-  setSellerPrice
+  setSellerPrice,
+  setQueue
 };

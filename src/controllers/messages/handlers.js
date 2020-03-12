@@ -22,7 +22,8 @@ const {
   promptSetupFAQ,
   promptSetupQueue,
   promptStart,
-  setSellerPrice
+  setSellerPrice,
+  setQueue
 } = require("./users/seller");
 const t = require("../../copy.json");
 
@@ -134,7 +135,7 @@ function handleQuickReply(client, recipient, message) {
 
   const listingRef = db.ref(`listings/${listingId}`);
 
-  listingRef.once("value", snapshot => {
+  listingRef.once("value", async snapshot => {
     const listing = snapshot.val();
 
     switch (payload) {
@@ -142,21 +143,21 @@ function handleQuickReply(client, recipient, message) {
         return sendText(client, recipient, t.buyer.no_queue);
       case "seller":
         addListing(recipient.id, listingId);
+        createListing(listingId, {
+          seller: recipient.id,
+          has_queue: false,
+          queue: [],
+          faq: [],
+          price: 0,
+          title: data.title
+        });
         return promptSetupQueue(client, recipient);
       case "setup-faq":
         return setupFAQ(client, recipient, listingId);
       case "skip-faq":
         return promptStart(client, recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
-        createListing(listingId, {
-          seller: recipient.id,
-          has_queue: true,
-          queue: [],
-          faq: [],
-          price: 0,
-          title: data.title
-        });
-        sendText(client, recipient, t.queue.did_add);
+        setQueue(listingId, true);
         return promptSetupFAQ(client, recipient);
       case "add-queue":
         return addUserToQueue(client, recipient, listingId);

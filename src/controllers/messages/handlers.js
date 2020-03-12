@@ -13,11 +13,6 @@ const {
   removeUserFromQueue
 } = require("./users/buyer");
 const {
-  addUserToQueue,
-  notifyBuyerStatus,
-  promptInterestedBuyer
-} = require("./users/buyer");
-const {
   addListing,
   createListing,
   displayQueue,
@@ -25,10 +20,33 @@ const {
   promptSetupQueue,
   promptStart
 } = require("./users/seller");
+const { makeRoom, sendMessage } = require("./rooms");
 const t = require("../../copy.json");
 
-function handleText(client, recipient, message) {
-  client.sendText(recipient, message.text);
+async function handleText(client, recipient, message) {
+  const ctx = context.getContext(recipient.id);
+  if (ctx && ctx.state === "chatting") {
+    const { to } = ctx.data;
+    return sendMessage(recipient.id, to, message.text);
+  }
+  if (message.text === "message seller") {
+    const { data } = context.getContext(recipient.id);
+    const { listingId } = data;
+    const snapshot = await db.ref(`listings/${listingId}`).once("value");
+    const { seller } = snapshot.val();
+
+    await makeRoom(listingId, [seller, recipient.id]);
+    const { first_name } = await client.getUserProfile(seller, ["first_name"]);
+    return sendText(
+      client,
+      recipient,
+      `You are now connected with ${first_name}!`
+    ).then(() => {
+      context.setContext(recipient.id, "chatting", { to: seller });
+      context.setContext(seller, "chatting", { to: recipient.id });
+    });
+  }
+  return client.sendText(recipient, message.text);
 }
 
 function handleDebug(client, recipient, message) {
@@ -110,8 +128,6 @@ function handleQuickReply(client, recipient, message) {
   const listingRef = db.ref(`listings/${listingId}`);
 
   listingRef.once("value", snapshot => {
-    const { queue, faq } = snapshot.val();
-
     switch (payload) {
       case "buyer":
         return sendText(client, recipient, t.buyer.no_queue);
@@ -129,12 +145,15 @@ function handleQuickReply(client, recipient, message) {
         });
         return promptStart(client, recipient, t.queue.did_add);
       case "add-queue":
-        addUserToQueue(client, recipient, listingId);
-        return promptInterestedBuyer(client, recipient, queue);
-      case "display-queue":
+        return addUserToQueue(client, recipient, listingId);
+      case "display-queue": {
+        const { queue } = snapshot.val();
         return displayQueue(client, recipient, queue);
-      case "skip-queue":
+      }
+      case "skip-queue": {
+        const { queue } = snapshot.val();
         return promptInterestedBuyer(client, recipient, queue);
+      }
       case "leave-queue":
         return removeUserFromQueue(client, recipient, listingId);
       case "remove-listing":
@@ -145,9 +164,11 @@ function handleQuickReply(client, recipient, message) {
         return showListings(client, recipient);
       case "show-interests":
         return showInterests(client, recipient);
-      case "show-faq":
+      case "show-faq": {
+        const { queue, faq } = snapshot.val();
         sendText(client, recipient, formatFAQ(faq || []));
         return promptInterestedBuyer(client, recipient, queue || []);
+      }
       case "quit":
         // TODO
         sendText(client, recipient, "Not implemented.");

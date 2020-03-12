@@ -3,20 +3,11 @@ require("dotenv").config();
 
 const messagesController = require("./controllers/messages");
 const postbacksController = require("./controllers/postbacks");
+const { client } = require("./client");
 
 const Webhook = new Messenger.Webhook({
   verify_token: process.env.VERIFY_TOKEN
 });
 
-const Client = new Messenger.Client({
-  page_token: process.env.PAGE_ACCESS_TOKEN
-});
-
-Client.setMessengerProfile({
-  get_started: {
-    payload: "get-started"
-  }
-});
-
-Webhook.on("messages", messagesController(Client));
-Webhook.on("messaging_postbacks", postbacksController(Client));
+Webhook.on("messages", messagesController(client));
+Webhook.on("messaging_postbacks", postbacksController(client));

@@ -41,14 +41,14 @@ function removeListing(userId, listingId) {
   listingsRef.once("value", snapshot => snapshot.child(listingId).remove());
 
   // remove listing from user's listings_sale array
-  const userRef = db.ref(`users/${userId}`);
-  userRef.once("value", snapshot => {
-    const { listings_sale } = snapshot.val();
-    if (listings_sale) {
-      const index = listings_sale.indexOf(listingId);
+  const listings_sale = db.ref(`users/${userId}/listings_sale`);
+  listings_sale.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const index = val.indexOf(listingId);
       if (index >= 0) {
-        listings_sale.splice(index, 1);
-        userRef.set({ ...snapshot.val(), listings_sale });
+        val.splice(index, 1);
+        listings_sale.set(val);
       }
     }
   });

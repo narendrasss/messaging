@@ -38,7 +38,7 @@ function addListing(userId, listingId) {
 function removeListing(userId, listingId) {
   // remove listing from list of listings
   const listingsRef = db.ref("listings");
-  listingsRef.once("value", snapshot => snapshot.child(listingId).remove());
+  listingsRef.once("value", snapshot => snapshot.child(listingId).ref.remove());
 
   // remove listing from user's listings_sale array
   const listings_sale = db.ref(`users/${userId}/listings_sale`);

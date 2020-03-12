@@ -13,11 +13,6 @@ const {
   removeUserFromQueue
 } = require("./users/buyer");
 const {
-  addUserToQueue,
-  notifyBuyerStatus,
-  promptInterestedBuyer
-} = require("./users/buyer");
-const {
   addListing,
   createListing,
   removeListing,

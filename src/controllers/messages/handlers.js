@@ -50,8 +50,9 @@ function handleText(client, recipient, message) {
       // if the user has answered all the questions
       setContext(recipient.id, state.FAQ_DONE, { ...getContext(recipient.id) });
     }
+  } else {
+    client.sendText(recipient, message.text);
   }
-  client.sendText(recipient, message.text);
 }
 
 function handleDebug(client, recipient, message) {

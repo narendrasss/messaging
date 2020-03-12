@@ -49,11 +49,11 @@ function createListing(listingId, listing) {
  * @param {string} price
  */
 function setSellerPrice(listingId, price) {
-  const listingRef = db.ref(`listings/${listingId}`);
-  listingRef.child(listingId).once("value", snapshot => {
+  const priceRef = db.ref(`listings/${listingId}/price`);
+  priceRef.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {
-      val.set({ ...val, price });
+      val.set(price);
     }
   });
 }
@@ -91,7 +91,7 @@ function displayQueue(client, recipient, queue) {
  */
 function setupFAQ(client, recipient) {
   setContext(recipient.id, state.FAQ_SETUP, {
-    ...getContext(recipient.id),
+    ...getContext(recipient.id).data,
     question: 0
   });
   sendText(client, recipient, t.faq.questions[0]);

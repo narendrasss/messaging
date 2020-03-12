@@ -31,24 +31,29 @@ const {
 const t = require("../../copy.json");
 
 function handleText(client, recipient, message) {
-  if (getContext(recipient.id).state === state.FAQ_SETUP) {
-    // if the user is currently setting up their FAQ
-    setContext(recipient.id, state.FAQ_SETUP, {
-      ...getContext(recipient.id),
-      questions: answeredQuestions + 1
-    });
-    const answeredQuestions = getContext(recipient.id).data.questions;
+  if (getContext(recipient.id)) {
+    const { state: currentState } = getContext(recipient.id);
+    if (currentState === state.FAQ_SETUP) {
+      // if the user is currently setting up their FAQ
+      setContext(recipient.id, state.FAQ_SETUP, {
+        ...getContext(recipient.id).data,
+        questions: answeredQuestions + 1
+      });
+      const answeredQuestions = getContext(recipient.id).data.questions;
 
-    // 1. Price
-    setSellerPrice(context.data.listingId, message);
+      // 1. Price
+      setSellerPrice(context.data.listingId, message);
 
-    if (answeredQuestions < t.faq.questions.length) {
-      // if the user hasn't answered all the questions
-      const currentQuestion = t.faq.questions[answeredQuestions];
-      sendText(client, recipient, currentQuestion);
-    } else {
-      // if the user has answered all the questions
-      setContext(recipient.id, state.FAQ_DONE, { ...getContext(recipient.id) });
+      if (answeredQuestions < t.faq.questions.length) {
+        // if the user hasn't answered all the questions
+        const currentQuestion = t.faq.questions[answeredQuestions];
+        sendText(client, recipient, currentQuestion);
+      } else {
+        // if the user has answered all the questions
+        setContext(recipient.id, state.FAQ_DONE, {
+          ...getContext(recipient.id).data
+        });
+      }
     }
   } else {
     client.sendText(recipient, message.text);

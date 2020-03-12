@@ -32,6 +32,7 @@
   "seller": {
     "item_sold": "Remove item from listings.",
     "own_listing": "This is one of your listings!",
+    "remove_listing": "This item was successfully removed from your listings. What would you like to do next?",
     "quit": "Quit",
     "see_queue": "Display users in the queue."
   },

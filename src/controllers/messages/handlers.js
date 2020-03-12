@@ -13,13 +13,9 @@ const {
   removeUserFromQueue
 } = require("./users/buyer");
 const {
-  addUserToQueue,
-  notifyBuyerStatus,
-  promptInterestedBuyer
-} = require("./users/buyer");
-const {
   addListing,
   createListing,
+  removeListing,
   displayQueue,
   setupFAQ,
   promptSellerListing,
@@ -139,7 +135,7 @@ function handleQuickReply(client, recipient, message) {
   const listingRef = db.ref(`listings/${listingId}`);
 
   listingRef.once("value", snapshot => {
-    const { queue, faq } = snapshot.val();
+    const listing = snapshot.val();
 
     switch (payload) {
       case "buyer":
@@ -163,25 +159,24 @@ function handleQuickReply(client, recipient, message) {
         sendText(client, recipient, t.queue.did_add);
         return promptSetupFAQ(client, recipient);
       case "add-queue":
-        addUserToQueue(client, recipient, listingId);
-        return promptInterestedBuyer(client, recipient, queue);
+        return addUserToQueue(client, recipient, listingId);
       case "display-queue":
-        return displayQueue(client, recipient, queue);
+        return displayQueue(client, recipient, listing.queue);
       case "skip-queue":
         return promptSetupFAQ(client, recipient);
       case "leave-queue":
         return removeUserFromQueue(client, recipient, listingId);
       case "remove-listing":
-        // TODO
-        sendText(client, recipient, "Not implemented.");
-        break;
+        removeListing(recipient.id, listingId);
+        return promptStart(client, recipient, t.seller.remove_listing);
       case "show-listings":
         return showListings(client, recipient);
       case "show-interests":
         return showInterests(client, recipient);
       case "show-faq":
-        sendText(client, recipient, formatFAQ(faq || []));
-        return promptInterestedBuyer(client, recipient, queue || []);
+        const { queue = [], faq = [] } = listing;
+        sendText(client, recipient, formatFAQ(faq));
+        return promptInterestedBuyer(client, recipient, queue);
       case "quit":
         // TODO
         sendText(client, recipient, "Not implemented.");

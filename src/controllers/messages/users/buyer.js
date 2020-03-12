@@ -1,4 +1,8 @@
-const { getQueueMessage, sendText } = require("../helpers");
+const {
+  getQueueMessage,
+  getUpdatedQueueMessage,
+  sendText
+} = require("../helpers");
 const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
@@ -105,13 +109,16 @@ function addUserToQueue(client, recipient, listingId) {
 }
 
 /**
- * If the user is in the queue, removes them from the queue. Otherwise, queue remains intact.
+ * If the user is in the queue, removes them from the queue and
+ * notifies all other users in the queue of their updated position.
+ * Otherwise, queue remains intact.
  *
  * @param {object} client
  * @param {object} recipient
  * @param {string} listingId
+ * @param {string} title
  */
-function removeUserFromQueue(client, recipient, listingId) {
+function removeUserFromQueue(client, recipient, listingId, title) {
   const queue = db.ref(`listings/${listingId}/queue`);
   queue.once("value", snapshot => {
     const val = snapshot.val();
@@ -123,6 +130,12 @@ function removeUserFromQueue(client, recipient, listingId) {
         val.splice(position, 1);
         queue.set(val);
         sendText(client, recipient, t.buyer.remove_queue);
+
+        for (const id of val) {
+          const recipient = { id };
+          const text = getUpdatedQueueMessage(id, val, title);
+          sendText(client, recipient, text);
+        }
       }
     }
   });

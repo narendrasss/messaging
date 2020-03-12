@@ -60,6 +60,21 @@ function getQueueMessage(id, queue) {
   } ahead of you.`;
 }
 
+function getUpdatedQueueMessage(id, queue, item) {
+  const q = queue || [];
+  const index = q.indexOf(id);
+  const length = q.length;
+  if (index < 0) {
+    return `There ${length == 1 ? "is" : "are"} currently ${length} ${
+      length == 1 ? "person" : "people"
+    } waiting for ${item}`;
+  }
+  if (index === 0) {
+    return `You're first in line for ${item}`;
+  }
+  return `You are in position ${index} out of ${length} for ${item}`;
+}
+
 function getSellerStatusMessage(listing) {
   return (
     t.seller.own_listing +
@@ -77,6 +92,7 @@ module.exports = {
   getMessageType,
   getListingId,
   getQueueMessage,
+  getUpdatedQueueMessage,
   getSellerStatusMessage,
   messageTypes,
   sendText

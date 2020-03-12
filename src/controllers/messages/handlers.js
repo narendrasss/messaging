@@ -105,7 +105,7 @@ function handleListing(client, recipient, message) {
 function handleQuickReply(client, recipient, message) {
   const { payload } = message.quick_reply;
   const { data } = context.getContext(recipient.id);
-  const { listingId } = data;
+  const { listingId, title } = data;
 
   const listingRef = db.ref(`listings/${listingId}`);
 
@@ -125,7 +125,7 @@ function handleQuickReply(client, recipient, message) {
           queue: [],
           faq: [],
           price: 0,
-          title: data.title
+          title
         });
         return promptStart(client, recipient, t.queue.did_add);
       case "add-queue":
@@ -136,7 +136,7 @@ function handleQuickReply(client, recipient, message) {
       case "skip-queue":
         return promptInterestedBuyer(client, recipient, queue);
       case "leave-queue":
-        return removeUserFromQueue(client, recipient, listingId);
+        return removeUserFromQueue(client, recipient, listingId, title);
       case "remove-listing":
         // TODO
         sendText(client, recipient, "Not implemented.");

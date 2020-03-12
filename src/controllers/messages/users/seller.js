@@ -13,7 +13,7 @@ function addListing(userId, listingId) {
   users.child(userId).once("value", snapshot => {
     if (snapshot.val()) {
       // if the seller exists in the db
-      const { listings_sale } = snapshot.val();
+      const { listings_sale = [] } = snapshot.val();
       const user = users.child(userId);
       user.set({
         ...snapshot.val(),

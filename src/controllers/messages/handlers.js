@@ -20,14 +20,48 @@ const {
   promptSetupQueue,
   promptStart
 } = require("./users/seller");
-const { makeRoom, sendMessage } = require("./rooms");
+const {
+  activateRoom,
+  deactivateRoom,
+  getRoom,
+  makeRoom,
+  sendMessage
+} = require("./rooms");
 const t = require("../../copy.json");
 
 async function handleText(client, recipient, message) {
   const ctx = context.getContext(recipient.id);
+  if (message.text.startsWith("\\")) {
+    // Handle commands here
+    const command = message.text.substring(1);
+    switch (command) {
+      case "q":
+      case "quit":
+        if (!ctx || ctx.state !== "chatting") {
+          return sendText(
+            client,
+            recipient,
+            "It doesn't look like you're messaging anyone."
+          );
+        }
+        const {
+          data: { to, roomId }
+        } = ctx;
+        await deactivateRoom(roomId);
+        context.removeContext(to);
+        context.removeContext(recipient.id);
+        const { first_name } = await client.getUserProfile(recipient.id, [
+          "first_name"
+        ]);
+        sendText(client, { id: to }, `${first_name} has left the chat.`);
+        return sendText(client, recipient, "Successfully disconnected.");
+      default:
+        return;
+    }
+  }
   if (ctx && ctx.state === "chatting") {
-    const { to } = ctx.data;
-    return sendMessage(recipient.id, to, message.text);
+    const { to, roomId } = ctx.data;
+    return sendMessage(roomId, recipient.id, to, message.text);
   }
   if (message.text === "message seller") {
     const { data } = context.getContext(recipient.id);
@@ -35,15 +69,21 @@ async function handleText(client, recipient, message) {
     const snapshot = await db.ref(`listings/${listingId}`).once("value");
     const { seller } = snapshot.val();
 
-    await makeRoom(listingId, [seller, recipient.id]);
+    let roomId = await getRoom(seller, recipient.id);
+    if (!roomId) {
+      roomId = await makeRoom(listingId, [seller, recipient.id]);
+    } else {
+      await activateRoom(roomId);
+    }
+
     const { first_name } = await client.getUserProfile(seller, ["first_name"]);
     return sendText(
       client,
       recipient,
-      `You are now connected with ${first_name}!`
+      `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
     ).then(() => {
-      context.setContext(recipient.id, "chatting", { to: seller });
-      context.setContext(seller, "chatting", { to: recipient.id });
+      context.setContext(recipient.id, "chatting", { to: seller, roomId });
+      context.setContext(seller, "chatting", { to: recipient.id, roomId });
     });
   }
   return client.sendText(recipient, message.text);

@@ -13,11 +13,6 @@ const {
   removeUserFromQueue
 } = require("./users/buyer");
 const {
-  addUserToQueue,
-  notifyBuyerStatus,
-  promptInterestedBuyer
-} = require("./users/buyer");
-const {
   addListing,
   createListing,
   displayQueue,
@@ -110,7 +105,7 @@ function handleQuickReply(client, recipient, message) {
   const listingRef = db.ref(`listings/${listingId}`);
 
   listingRef.once("value", snapshot => {
-    const { queue, faq } = snapshot.val();
+    const listing = snapshot.val();
 
     switch (payload) {
       case "buyer":
@@ -129,12 +124,12 @@ function handleQuickReply(client, recipient, message) {
         });
         return promptStart(client, recipient, t.queue.did_add);
       case "add-queue":
-        addUserToQueue(client, recipient, listingId);
-        return promptInterestedBuyer(client, recipient, queue);
+        return addUserToQueue(client, recipient, listingId);
       case "display-queue":
-        return displayQueue(client, recipient, queue);
+        return displayQueue(client, recipient, listing.queue);
       case "skip-queue":
-        return promptInterestedBuyer(client, recipient, queue);
+        // TODO
+        return sendText(client, recipient, "Not implemented.");
       case "leave-queue":
         return removeUserFromQueue(client, recipient, listingId);
       case "remove-listing":
@@ -146,8 +141,9 @@ function handleQuickReply(client, recipient, message) {
       case "show-interests":
         return showInterests(client, recipient);
       case "show-faq":
-        sendText(client, recipient, formatFAQ(faq || []));
-        return promptInterestedBuyer(client, recipient, queue || []);
+        const { queue = [], faq = [] } = listing;
+        sendText(client, recipient, formatFAQ(faq));
+        return promptInterestedBuyer(client, recipient, queue);
       case "quit":
         // TODO
         sendText(client, recipient, "Not implemented.");

@@ -66,6 +66,10 @@ function createListing(listingId, listing) {
     .set(listing);
 }
 
+function setQueue(listingId, hasQueue) {
+  return db.ref(`listings/${listingId}/has_queue`).set(hasQueue);
+}
+
 // AUTOMATED REPLIES
 
 /**
@@ -184,5 +188,6 @@ module.exports = {
   displayQueue,
   promptSellerListing,
   promptSetupQueue,
-  promptStart
+  promptStart,
+  setQueue
 };

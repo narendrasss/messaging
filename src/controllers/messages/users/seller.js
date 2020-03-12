@@ -42,6 +42,22 @@ function createListing(listingId, listing) {
     .set(listing);
 }
 
+/**
+ * Sets the price on a listing
+ *
+ * @param {string} listingId
+ * @param {string} price
+ */
+function setSellerPrice(listingId, price) {
+  const listingRef = db.ref(`listings/${listingId}`);
+  listingRef.child(listingId).once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      val.set({ ...val, price });
+    }
+  });
+}
+
 // AUTOMATED REPLIES
 
 /**
@@ -197,5 +213,6 @@ module.exports = {
   promptSellerListing,
   promptSetupFAQ,
   promptSetupQueue,
-  promptStart
+  promptStart,
+  setSellerPrice
 };

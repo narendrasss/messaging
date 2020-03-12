@@ -25,7 +25,8 @@ const {
   promptSellerListing,
   promptSetupFAQ,
   promptSetupQueue,
-  promptStart
+  promptStart,
+  setSellerPrice
 } = require("./users/seller");
 const t = require("../../copy.json");
 
@@ -37,6 +38,10 @@ function handleText(client, recipient, message) {
       questions: answeredQuestions + 1
     });
     const answeredQuestions = getContext(recipient.id).data.questions;
+
+    // 1. Price
+    setSellerPrice(context.data.listingId, message);
+
     if (answeredQuestions < t.faq.questions.length) {
       // if the user hasn't answered all the questions
       const currentQuestion = t.faq.questions[answeredQuestions];

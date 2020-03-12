@@ -92,6 +92,7 @@ function handleListing(client, recipient, message) {
         return promptSetupQueue(client, recipient, listingId);
       }
     }
+    context.setContext(recipient.id, "categorize", { listingId, title });
     return promptUserCategorization(client, recipient, listingId);
   });
 }
@@ -100,9 +101,12 @@ function handleQuickReply(client, recipient, message) {
   const { payload } = message.quick_reply;
   const { data } = context.getContext(recipient.id);
   const { listingId } = data;
+  
   const listingRef = db.ref(`listings/${listingId}`);
+ 
   listingRef.once("value", snapshot => {
-    const { queue, faq } = snapshot.val()
+    const { queue, faq } = snapshot.val();
+                  
     switch (payload) {
       case "buyer":
         return sendText(client, recipient, t.buyer.no_queue);
@@ -116,16 +120,11 @@ function handleQuickReply(client, recipient, message) {
           queue: [],
           faq: [],
           price: 0,
-          title: title
+          title: data.title
         });
         return promptStart(client, recipient, t.queue.did_add);
       case "add-queue":
-        if (!queue.includes(recipient.id)) {
-          addUserToQueue(client, recipient, listingId);
-        } else {
-          const message = getQueueMessage(recipient.id, queue);
-          sendText(client, recipient, message);
-        }
+        addUserToQueue(client, recipient, listingId);
         return promptInterestedBuyer(client, recipient, queue);
       case "display-queue":
         return displayQueue(client, recipient, queue);
@@ -142,9 +141,8 @@ function handleQuickReply(client, recipient, message) {
       case "show-interests":
         return showInterests(client, recipient);
       case "show-faq":
-        const formattedMessage = faq.length > 0 ? formatFAQ(faq) : t.buyer.no_faq;
-        sendText(client, recipient, formattedMessage);
-        return promptInterestedBuyer(client, recipient, queue);
+        sendText(client, recipient, formatFAQ(faq || []));
+        return promptInterestedBuyer(client, recipient, queue || []);
       case "quit":
         // TODO
         sendText(client, recipient, "Not implemented.");
@@ -154,7 +152,7 @@ function handleQuickReply(client, recipient, message) {
         sendText(client, recipient, "Not implemented.");
         break;
       }
-  })
+  });
 }
 
 module.exports = {

@@ -11,7 +11,6 @@ const t = require("../../../copy.json");
  * @param {object} recipient
  */
 function promptUserCategorization(client, recipient, listingId) {
-  context.setContext(recipient.id, "categorize", { listingId });
   const text = t.user_categorization.question;
   const replies = [
     {
@@ -60,8 +59,9 @@ function showListings(client, recipient) {
     const val = snapshot.val();
     if (val) {
       const { listings_sale } = val;
-      const template = _constructTemplate(listings_sale, "generic");
-      return client.sendTemplate(recipient, template);
+      _constructTemplate(listings_sale, "generic").then(template => {
+        client.sendTemplate(recipient, template).catch(err => console.error(err));
+      })
     }
   });
 }
@@ -75,24 +75,26 @@ function showListings(client, recipient) {
 function _constructTemplate(listings, template_type) {
   const elements = [];
   for (const listing of listings) {
-    const title = listing.title;
-    const id = listing.listingId;
-    elements.push({
-      title,
-      default_action: {
-        type: "web_url",
-        url: `https://www.facebook.com/marketplace/item/${id}/`
-      },
-      buttons: [
-        {
+    elements.push(db.ref(`listings/${listing}`).once("value").then(snapshot => {
+      const val = snapshot.val();
+      const title = val.title;
+      return {
+        title,
+        default_action: {
           type: "web_url",
-          url: `https://www.facebook.com/marketplace/item/${id}/`,
-          title: "View Listing"
-        }
-      ]
-    });
+          url: `https://www.facebook.com/marketplace/item/${listing}/`
+        },
+        buttons: [
+          {
+            type: "web_url",
+            url: `https://www.facebook.com/marketplace/item/${listing}/`,
+            title: "View Listing"
+          }
+        ]
+      }
+    }))
   }
-  return { template_type, elements };
+  return Promise.all(elements).then(el => ({ template_type, elements: el.filter(e => e.title !== undefined) }))
 }
 
 module.exports = {

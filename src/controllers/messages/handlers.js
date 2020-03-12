@@ -1,5 +1,5 @@
 const { db } = require("../../db");
-const context = require("../../context");
+const { getContext, setContext, state } = require("../../context");
 const { getListingId, sendText } = require("./helpers");
 const {
   promptUserCategorization,
@@ -30,6 +30,22 @@ const {
 const t = require("../../copy.json");
 
 function handleText(client, recipient, message) {
+  if (getContext(recipient.id).state === state.FAQ_SETUP) {
+    // if the user is currently setting up their FAQ
+    setContext(recipient.id, state.FAQ_SETUP, {
+      ...getContext(recipient.id),
+      questions: answeredQuestions + 1
+    });
+    const answeredQuestions = getContext(recipient.id).data.questions;
+    if (answeredQuestions < t.faq.questions.length) {
+      // if the user hasn't answered all the questions
+      const currentQuestion = t.faq.questions[answeredQuestions];
+      sendText(client, recipient, currentQuestion);
+    } else {
+      // if the user has answered all the questions
+      setContext(recipient.id, state.FAQ_DONE, { ...getContext(recipient.id) });
+    }
+  }
   client.sendText(recipient, message.text);
 }
 
@@ -79,7 +95,7 @@ function handleListing(client, recipient, message) {
   const { title } = message.attachments[0].payload;
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
-    context.setContext(recipient.id, "", { listingId, title });
+    setContext(recipient.id, "", { listingId, title });
     const listing = snapshot.val();
     if (listing) {
       const { seller, has_queue, queue } = listing;
@@ -99,14 +115,14 @@ function handleListing(client, recipient, message) {
         return promptSetupQueue(client, recipient);
       }
     }
-    context.setContext(recipient.id, "categorize", { listingId, title });
+    setContext(recipient.id, state.CATEGORIZE, { listingId, title });
     return promptUserCategorization(client, recipient, listingId);
   });
 }
 
 function handleQuickReply(client, recipient, message) {
   const { payload } = message.quick_reply;
-  const { data } = context.getContext(recipient.id);
+  const { data } = getContext(recipient.id);
   const { listingId } = data;
 
   const listingRef = db.ref(`listings/${listingId}`);
@@ -119,8 +135,7 @@ function handleQuickReply(client, recipient, message) {
         return sendText(client, recipient, t.buyer.no_queue);
       case "seller":
         addListing(recipient.id, listingId);
-        promptSetupQueue(client, recipient);
-        return promptSetupFAQ(client, recipient);
+        return promptSetupQueue(client, recipient);
       case "setup-faq":
         return setupFAQ(client, recipient, listingId);
       case "skip-faq":
@@ -134,14 +149,15 @@ function handleQuickReply(client, recipient, message) {
           price: 0,
           title: data.title
         });
-        return promptStart(client, recipient, t.queue.did_add);
+        sendText(client, recipient, t.queue.did_add);
+        return promptSetupFAQ(client, recipient);
       case "add-queue":
         addUserToQueue(client, recipient, listingId);
         return promptInterestedBuyer(client, recipient, queue);
       case "display-queue":
         return displayQueue(client, recipient, queue);
       case "skip-queue":
-        return promptInterestedBuyer(client, recipient, queue);
+        return promptSetupFAQ(client, recipient);
       case "leave-queue":
         return removeUserFromQueue(client, recipient, listingId);
       case "remove-listing":

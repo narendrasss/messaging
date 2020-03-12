@@ -1,4 +1,5 @@
 const { db } = require("../../../db");
+const { getContext, setContext, state } = require("../../../context");
 const { getSellerStatusMessage, sendText } = require("../helpers");
 const t = require("../../../copy.json");
 
@@ -66,7 +67,19 @@ function displayQueue(client, recipient, queue) {
   sendText(client, recipient, message.substring(0, message.length - 1));
 }
 
-function setupFAQ(client, recipient, listingId) {}
+/**
+ * Asks the user the first question in the list of FAQ.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ */
+function setupFAQ(client, recipient) {
+  setContext(recipient.id, state.FAQ_SETUP, {
+    ...getContext(recipient.id),
+    question: 0
+  });
+  sendText(client, recipient, t.faq.questions[0]);
+}
 
 /**
  * Asks the user what they would like to do next.

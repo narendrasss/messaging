@@ -15,6 +15,7 @@ const {
 const {
   addListing,
   createListing,
+  removeListing,
   displayQueue,
   promptSellerListing,
   promptSetupQueue,
@@ -133,9 +134,8 @@ function handleQuickReply(client, recipient, message) {
       case "leave-queue":
         return removeUserFromQueue(client, recipient, listingId);
       case "remove-listing":
-        // TODO
-        sendText(client, recipient, "Not implemented.");
-        break;
+        removeListing(recipient.id, listingId);
+        return promptStart(client, recipient, t.seller.remove_listing);
       case "show-listings":
         return showListings(client, recipient);
       case "show-interests":

@@ -30,6 +30,31 @@ function addListing(userId, listingId) {
 }
 
 /**
+ * Removes listing from list of listings and also from seller's list of listings.
+ *
+ * @param {string} userId
+ * @param {string} listingId
+ */
+function removeListing(userId, listingId) {
+  // remove listing from list of listings
+  const listingsRef = db.ref("listings");
+  listingsRef.once("value", snapshot => snapshot.child(listingId).ref.remove());
+
+  // remove listing from user's listings_sale array
+  const listings_sale = db.ref(`users/${userId}/listings_sale`);
+  listings_sale.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const index = val.indexOf(listingId);
+      if (index >= 0) {
+        val.splice(index, 1);
+        listings_sale.set(val);
+      }
+    }
+  });
+}
+
+/**
  * Creates listing object in database
  *
  * @param {string} listingId
@@ -155,6 +180,7 @@ function promptSetupQueue(client, recipient, listingId) {
 module.exports = {
   addListing,
   createListing,
+  removeListing,
   displayQueue,
   promptSellerListing,
   promptSetupQueue,

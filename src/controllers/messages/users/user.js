@@ -59,11 +59,15 @@ function showListings(client, recipient) {
     const val = snapshot.val();
     if (val) {
       const { listings_sale } = val;
-      _constructTemplate(listings_sale, "generic").then(template => {
-        client
-          .sendTemplate(recipient, template)
-          .catch(err => console.error(err));
-      });
+      if (!listings_sale) {
+        client.sendText(recipient, "You haven't shared any listings yet.");
+      } else {
+        _constructTemplate(listings_sale, "generic").then(template => {
+          client
+            .sendTemplate(recipient, template)
+            .catch(err => console.error(err));
+        });
+      }
     }
   });
 }

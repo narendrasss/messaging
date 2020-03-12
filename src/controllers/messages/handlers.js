@@ -20,6 +20,7 @@ const {
 const {
   addListing,
   createListing,
+  removeListing,
   displayQueue,
   promptSellerListing,
   promptSetupQueue,

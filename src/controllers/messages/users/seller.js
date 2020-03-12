@@ -1,5 +1,5 @@
 const { db } = require("../../../db");
-const { getSellerStatusMessage } = require("../helpers");
+const { getSellerStatusMessage, sendText } = require("../helpers");
 const t = require("../../../copy.json");
 
 /**
@@ -44,6 +44,59 @@ function createListing(listingId, listing) {
 // AUTOMATED REPLIES
 
 /**
+ * Formats and sends a message containing the current queue to the seller.
+ *
+ * @param {*} client
+ * @param {*} recipient
+ * @param {*} queue
+ */
+function displayQueue(client, recipient, queue) {
+  const q = queue || [];
+  let message =
+    "There " +
+    (q.length === 1 ? "is 1 person" : `are ${q.length} people `) +
+    "in the queue.\n";
+
+  for (const psid of q) {
+    const { first_name, last_name } = client
+      .getUserProfile(psid, ["first_name", "last_name"])
+      .then(() => (message += `${first_name} ${last_name}\n`))
+      .catch(err => console.error(err));
+  }
+  sendText(client, recipient, message.substring(0, message.length - 1));
+}
+
+/**
+ * Asks the user what they would like to do next.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ * @param {string} text
+ */
+function promptStart(client, recipient, text) {
+  const replies = [
+    {
+      content_type: "text",
+      title: t.start.show_listings,
+      payload: "show-listings"
+    },
+    {
+      content_type: "text",
+      title: t.start.show_interested,
+      payload: "show-interests"
+    },
+    {
+      content_type: "text",
+      title: t.start.quit,
+      payload: "quit"
+    }
+  ];
+  client
+    .sendQuickReplies(recipient, replies, text)
+    .catch(err => console.error(err));
+}
+
+/**
  * Tells the seller that this is their own listing and gives them options about how to manage it:
  * 1. See the queue
  * 2. Remove item from listings
@@ -59,17 +112,17 @@ function promptSellerListing(client, recipient, listing) {
     {
       content_type: "text",
       title: t.seller.see_queue,
-      payload: ""
+      payload: "display-queue"
     },
     {
       content_type: "text",
       title: t.seller.item_sold,
-      payload: ""
+      payload: "remove-listing"
     },
     {
       content_type: "text",
       title: t.seller.quit,
-      payload: ""
+      payload: "quit"
     }
   ];
   client.sendQuickReplies(recipient, replies, text);
@@ -88,20 +141,12 @@ function promptSetupQueue(client, recipient, listingId) {
     {
       content_type: "text",
       title: t.queue.setup,
-      payload: JSON.stringify({
-        setupQueue: true,
-        sellerId: recipient.id,
-        listingId
-      })
+      payload: "setup-queue"
     },
     {
       content_type: "text",
       title: t.queue.no_setup,
-      payload: JSON.stringify({
-        setupQueue: false,
-        sellerId: recipient.id,
-        listingId
-      })
+      payload: "skip-queue"
     }
   ];
   client.sendQuickReplies(recipient, replies, text);
@@ -110,6 +155,8 @@ function promptSetupQueue(client, recipient, listingId) {
 module.exports = {
   addListing,
   createListing,
+  displayQueue,
   promptSellerListing,
-  promptSetupQueue
+  promptSetupQueue,
+  promptStart
 };

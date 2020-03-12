@@ -3,6 +3,19 @@ const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
 /**
+ * Formats a string displaying the faq, given an array of objects with questions and answers.
+ *
+ * @param {array} faq
+ */
+function formatFAQ(faq) {
+  let formattedMessage = "";
+  for (const { question, answer } of faq) {
+    formattedMessage += `Question: ${question}\n` + `Answer: ${answer}\n\n`;
+  }
+  return formattedMessage.substring(0, -2);
+}
+
+/**
  * Asks the buyer what they would like to do next. Provides three options:
  * 1. Add self to queue
  * 2. See frequently asked questions of item
@@ -22,17 +35,17 @@ function promptInterestedBuyer(client, recipient, queue) {
     },
     {
       content_type: "text",
+      title: t.buyer.show_faq,
+      payload: "show-faq"
+    },
+    {
+      content_type: "text",
       title: t.buyer.dont_add_queue,
       payload: "skip-queue"
     }
   ];
   sendText(client, recipient, text);
-  client
-    .sendQuickReplies(
-      recipient,
-      replies,
-      t.queue.buyer_question
-    )
+  client.sendQuickReplies(recipient, replies, t.queue.buyer_question);
 }
 
 function notifyBuyerStatus(client, recipient, queue) {
@@ -66,8 +79,10 @@ function addUserToQueue(client, recipient, listingId) {
   interests.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {
-      val.push(listingId);
-      interests.set(val);
+      if (!val.includes(listingId)) {
+        val.push(listingId);
+        interests.set(val);
+      }
     } else {
       interests.set([listingId]);
     }
@@ -75,8 +90,13 @@ function addUserToQueue(client, recipient, listingId) {
   queue.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {
-      val.push(recipient.id);
-      queue.set(val);
+      if (!val.includes(recipient.id)) {
+        val.push(recipient.id);
+        queue.set(val);
+      } else {
+        const message = getQueueMessage(recipient.id, val);
+        sendText(client, recipient, message);
+      }
     } else {
       queue.set([recipient.id]);
     }
@@ -84,4 +104,34 @@ function addUserToQueue(client, recipient, listingId) {
   });
 }
 
-module.exports = { addUserToQueue, notifyBuyerStatus, promptInterestedBuyer };
+/**
+ * If the user is in the queue, removes them from the queue. Otherwise, queue remains intact.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ * @param {string} listingId
+ */
+function removeUserFromQueue(client, recipient, listingId) {
+  const queue = db.ref(`listings/${listingId}/queue`);
+  queue.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const position = val.indexOf(recipient.id);
+      if (position < 0) {
+        sendText(client, recipient, t.buyer.not_in_queue);
+      } else {
+        val.splice(position, 1);
+        queue.set(val);
+        sendText(client, recipient, t.buyer.remove_queue);
+      }
+    }
+  });
+}
+
+module.exports = {
+  addUserToQueue,
+  formatFAQ,
+  notifyBuyerStatus,
+  promptInterestedBuyer,
+  removeUserFromQueue
+};

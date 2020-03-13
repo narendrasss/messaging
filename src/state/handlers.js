@@ -1,8 +1,8 @@
-const { getContext, setContext, state } = require("../../context");
+const { getContext, setContext, state } = require("../state/context");
 const { send } = require("../client");
 const t = require("../copy.json");
 const rooms = require("../controllers/messages/rooms");
-const listings = require("../../db/listings");
+const listings = require("../db/listings");
 
 function chatting(recipient) {
   const { to, roomId } = ctx.data;

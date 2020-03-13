@@ -1,6 +1,6 @@
 const { db } = require("../../../db");
 const { getUserProfile, send } = require("../../../client");
-const { getContext, setContext, state } = require("../../../context");
+const { getContext, setContext, state } = require("../../../state/context");
 const { getSellerStatusMessage } = require("../helpers");
 const t = require("../../../copy.json");
 

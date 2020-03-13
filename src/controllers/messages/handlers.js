@@ -168,7 +168,6 @@ function handleQuickReply(recipient, message) {
 }
 
 module.exports = {
-  handleAttachments,
   handleText,
   handleListing,
   handleQuickReply

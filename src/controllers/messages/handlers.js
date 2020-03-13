@@ -1,6 +1,7 @@
 const { db } = require("../../db");
 const { getContext, setContext, state } = require("../../context");
-const { getListingId, sendText } = require("./helpers");
+const send = require("../../send");
+const { getListingId } = require("./helpers");
 const {
   promptUserCategorization,
   showInterests,
@@ -33,8 +34,7 @@ async function handleText(client, recipient, message) {
       case "q":
       case "quit":
         if (!ctx || ctx.state !== "chatting") {
-          return sendText(
-            client,
+          return send.text(
             recipient,
             "It doesn't look like you're messaging anyone."
           );
@@ -48,8 +48,8 @@ async function handleText(client, recipient, message) {
         const { first_name } = await client.getUserProfile(recipient.id, [
           "first_name"
         ]);
-        sendText(client, { id: to }, `${first_name} has left the chat.`);
-        return sendText(client, recipient, "Successfully disconnected.");
+        await send.text({ id: to }, `${first_name} has left the chat.`);
+        return send.text(recipient, "Successfully disconnected.");
       default:
         return;
     }
@@ -70,8 +70,7 @@ async function handleText(client, recipient, message) {
     // 1. Price
     const price = parseInt(message.text);
     if (isNaN(price)) {
-      return sendText(
-        client,
+      return send.text(
         recipient,
         "Oops, I don't understand that. Please type in a number."
       );
@@ -81,13 +80,13 @@ async function handleText(client, recipient, message) {
     if (answeredQuestions < t.faq.questions.length) {
       // if the user hasn't answered all the questions
       const currentQuestion = t.faq.questions[answeredQuestions];
-      return sendText(client, recipient, currentQuestion);
+      return send.text(recipient, currentQuestion);
     } else {
       // if the user has answered all the questions
       setContext(recipient.id, state.FAQ_DONE, {
         ...getContext(recipient.id).data
       });
-      return sendText(client, recipient, "Thanks! A FAQ has been set up.");
+      return send.text(recipient, "Thanks! A FAQ has been set up.");
     }
   }
   if (message.text === "message seller") {
@@ -104,16 +103,17 @@ async function handleText(client, recipient, message) {
     }
 
     const { first_name } = await client.getUserProfile(seller, ["first_name"]);
-    return sendText(
-      client,
-      recipient,
-      `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
-    ).then(() => {
-      setContext(recipient.id, "chatting", { to: seller, roomId });
-      setContext(seller, "chatting", { to: recipient.id, roomId });
-    });
+    return send
+      .text(
+        recipient,
+        `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
+      )
+      .then(() => {
+        setContext(recipient.id, "chatting", { to: seller, roomId });
+        setContext(seller, "chatting", { to: recipient.id, roomId });
+      });
   }
-  return client.sendText(recipient, message.text);
+  return send.text(recipient, message.text);
 }
 
 function handleDebug(client, recipient, message) {
@@ -174,7 +174,7 @@ function handleListing(client, recipient, message) {
           }
           return notifyBuyerStatus(client, recipient, q);
         }
-        return sendText(client, recipient, t.buyer.no_queue);
+        return send.text(recipient, t.buyer.no_queue);
       } else {
         if (has_queue) {
           return promptSellerListing(client, recipient, listing);
@@ -199,7 +199,7 @@ function handleQuickReply(client, recipient, message) {
 
     switch (payload) {
       case "buyer":
-        return sendText(client, recipient, t.buyer.no_queue);
+        return send.text(recipient, t.buyer.no_queue);
       case "seller":
         listings.addListing(recipient.id, listingId);
         listings.createListing(listingId, {
@@ -217,11 +217,7 @@ function handleQuickReply(client, recipient, message) {
         return promptStart(client, recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
         setQueue(listingId, true);
-        await sendText(
-          client,
-          recipient,
-          "A queue has been sucessfuly set up."
-        );
+        await send.text(recipient, "A queue has been sucessfuly set up.");
         return promptSetupFAQ(client, recipient);
       case "add-queue":
         return addUserToQueue(client, recipient, listingId);
@@ -240,15 +236,15 @@ function handleQuickReply(client, recipient, message) {
         return showInterests(client, recipient);
       case "show-faq":
         const { queue = [], faq = [] } = listing;
-        await sendText(client, recipient, formatFAQ(faq));
+        await send.text(recipient, formatFAQ(faq));
         return promptInterestedBuyer(client, recipient, queue);
       case "quit":
         // TODO
-        sendText(client, recipient, "Not implemented.");
+        send.text(recipient, "Not implemented.");
         break;
       default:
         // TODO
-        sendText(client, recipient, "Not implemented.");
+        send.text(recipient, "Not implemented.");
         break;
     }
   });

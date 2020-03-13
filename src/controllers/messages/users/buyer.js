@@ -132,9 +132,14 @@ function removeUserFromQueue(client, recipient, listingId, title) {
         sendText(client, recipient, t.buyer.remove_queue);
 
         for (const id of val) {
-          const recipient = { id };
+          const user = { id };
           const text = getUpdatedQueueMessage(id, val, title);
-          sendText(client, recipient, text);
+          sendText(
+            client,
+            user,
+            "Someone from one of the listings you're watching has left the queue."
+          );
+          sendText(client, user, text);
         }
       }
     }

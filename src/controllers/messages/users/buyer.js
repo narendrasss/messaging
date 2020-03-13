@@ -118,33 +118,43 @@ function addUserToQueue(client, recipient, listingId) {
  * @param {string} listingId
  * @param {string} title
  */
-function removeUserFromQueue(client, recipient, listingId, title) {
+async function removeUserFromQueue(client, recipient, listingId, title) {
   const listingRef = db.ref(`listings/${listingId}`);
-  listingRef.once("value", snapshot => {
-    const listing = snapshot.val();
-    const { queue } = listing;
-    if (queue) {
-      const position = queue.indexOf(recipient.id);
-      if (position < 0) {
-        sendText(client, recipient, t.buyer.not_in_queue);
-      } else {
-        queue.splice(position, 1);
-        listingRef.child("queue").set(queue);
-        sendText(client, recipient, t.buyer.remove_queue);
+  const snapshot = await listingRef.once("value");
+  const { queue = [], seller } = snapshot.val();
+  const position = queue.indexOf(recipient.id);
+  if (position < 0) {
+    sendText(client, recipient, t.buyer.not_in_queue);
+  } else {
+    queue.splice(position, 1);
+    await listingRef.child("queue").set(queue);
+    sendText(
+      client,
+      seller,
+      "Someone from one of your listings has left the queue."
+    ).then(() => {
+      const length = queue.length;
+      const text =
+        length === 0
+          ? `There's now no one waiting for ${title}.`
+          : `There ${length === 1 ? "is" : "are"} now ${queue.length} ${
+              length === 1 ? "person" : "people"
+            } waiting for ${title}.`;
+      sendText(client, seller, text);
+    });
 
-        for (const id of queue) {
-          const user = { id };
-          const text = getUpdatedQueueMessage(id, queue, title);
-          sendText(
-            client,
-            user,
-            "Someone from one of the listings you're watching has left the queue."
-          );
-          sendText(client, user, text);
-        }
-      }
+    sendText(client, recipient, t.buyer.remove_queue);
+    for (const id of queue) {
+      const user = { id };
+      const text = getUpdatedQueueMessage(id, queue, title);
+      sendText(
+        client,
+        user,
+        "Someone from one of the listings you're watching has left the queue."
+      );
+      sendText(client, user, text);
     }
-  });
+  }
 }
 
 module.exports = {

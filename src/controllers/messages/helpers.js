@@ -1,7 +1,6 @@
 const t = require("../../copy.json");
 
 const messageTypes = {
-  DEBUG: "debug",
   TEXT: "text",
   MULTIPLE: "multiple",
   LISTING: "listing",
@@ -12,9 +11,7 @@ const messageTypes = {
 
 function getMessageType(message) {
   if (message.text) {
-    if (message.text.toLowerCase() === "debug") {
-      return messageTypes.DEBUG;
-    } else if (message.quick_reply) {
+    if (message.quick_reply) {
       return messageTypes.QUICK_REPLY;
     }
     return messageTypes.TEXT;

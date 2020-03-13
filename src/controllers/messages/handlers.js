@@ -114,20 +114,6 @@ async function handleText(recipient, message) {
   return send.text(recipient, message.text);
 }
 
-function handleDebug(recipient, message) {
-  send.template(recipient, {
-    template_type: "button",
-    text: "DEBUG",
-    buttons: [
-      {
-        type: "postback",
-        title: "Get started",
-        payload: "get-started"
-      }
-    ]
-  });
-}
-
 function handleAttachments(recipient, message) {
   const { url } = message.attachments[0].payload;
   const template = {
@@ -250,7 +236,6 @@ function handleQuickReply(recipient, message) {
 
 module.exports = {
   handleAttachments,
-  handleDebug,
   handleText,
   handleListing,
   handleQuickReply

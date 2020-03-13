@@ -84,16 +84,11 @@ function getSellerStatusMessage(listing) {
   );
 }
 
-function sendText(client, recipient, text) {
-  return client.sendText(recipient, text).catch(err => console.error(err));
-}
-
 module.exports = {
   getMessageType,
   getListingId,
   getQueueMessage,
   getUpdatedQueueMessage,
   getSellerStatusMessage,
-  messageTypes,
-  sendText
+  messageTypes
 };

@@ -1,6 +1,6 @@
 const { db } = require("../../db");
 const { getContext, setContext, state } = require("../../context");
-const send = require("../../send");
+const { send } = require("../../client");
 const { getListingId } = require("./helpers");
 const {
   promptUserCategorization,

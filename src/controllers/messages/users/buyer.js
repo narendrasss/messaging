@@ -1,5 +1,5 @@
 const { getQueueMessage, getUpdatedQueueMessage } = require("../helpers");
-const send = require("../../../send");
+const { send } = require("../../../client");
 const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
@@ -22,11 +22,10 @@ function formatFAQ(faq) {
  * 2. See frequently asked questions of item
  * 3. Quit
  *
- * @param {object} client
  * @param {object} recipient
  * @param {array} queue
  */
-function promptInterestedBuyer(client, recipient, queue) {
+function promptInterestedBuyer(recipient, queue) {
   const text = getQueueMessage(recipient.id, queue);
   const replies = [
     {
@@ -50,7 +49,7 @@ function promptInterestedBuyer(client, recipient, queue) {
     .then(() => send.quickReplies(recipient, replies, t.queue.buyer_question));
 }
 
-function notifyBuyerStatus(client, recipient, queue) {
+function notifyBuyerStatus(recipient, queue) {
   send.text(recipient, getQueueMessage(recipient.id, queue));
   send.quickReplies(
     recipient,
@@ -75,7 +74,7 @@ function notifyBuyerStatus(client, recipient, queue) {
   );
 }
 
-function addUserToQueue(client, recipient, listingId) {
+function addUserToQueue(recipient, listingId) {
   const queue = db.ref(`listings/${listingId}/queue`);
   const interests = db.ref(`users/${recipient.id}/listings_buy`);
   interests.once("value", snapshot => {
@@ -111,12 +110,11 @@ function addUserToQueue(client, recipient, listingId) {
  * notifies all other users in the queue of their updated position.
  * Otherwise, queue remains intact.
  *
- * @param {object} client
  * @param {object} recipient
  * @param {string} listingId
  * @param {string} title
  */
-function removeUserFromQueue(client, recipient, listingId, title) {
+function removeUserFromQueue(recipient, listingId, title) {
   const queue = db.ref(`listings/${listingId}/queue`);
   queue.once("value", async snapshot => {
     const val = snapshot.val();

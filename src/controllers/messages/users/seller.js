@@ -1,5 +1,5 @@
 const { db } = require("../../../db");
-const send = require("../../../send");
+const { client, send } = require("../../../client");
 const { getContext, setContext, state } = require("../../../context");
 const { getSellerStatusMessage } = require("../helpers");
 const t = require("../../../copy.json");
@@ -13,11 +13,10 @@ function setQueue(listingId, hasQueue) {
 /**
  * Formats and sends a message containing the current queue to the seller.
  *
- * @param {*} client
  * @param {*} recipient
  * @param {*} queue
  */
-function displayQueue(client, recipient, queue) {
+function displayQueue(recipient, queue) {
   const q = queue || [];
   let message =
     "There " +
@@ -36,10 +35,9 @@ function displayQueue(client, recipient, queue) {
 /**
  * Asks the user the first question in the list of FAQ.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function setupFAQ(client, recipient) {
+function setupFAQ(recipient) {
   setContext(recipient.id, state.FAQ_SETUP, {
     ...getContext(recipient.id).data,
     question: 0
@@ -50,11 +48,10 @@ function setupFAQ(client, recipient) {
 /**
  * Asks the user what they would like to do next.
  *
- * @param {object} client
  * @param {object} recipient
  * @param {string} text
  */
-function promptStart(client, recipient, text) {
+function promptStart(recipient, text) {
   const replies = [
     {
       content_type: "text",
@@ -81,11 +78,10 @@ function promptStart(client, recipient, text) {
  * 2. Remove item from listings
  * 3. Quit
  *
- * @param {object} client
  * @param {object} recipient
  * @param {array} queue
  */
-function promptSellerListing(client, recipient, listing) {
+function promptSellerListing(recipient, listing) {
   const text = getSellerStatusMessage(listing);
   const replies = [
     {
@@ -110,10 +106,9 @@ function promptSellerListing(client, recipient, listing) {
 /**
  * Asks the seller if they would like to setup a FAQ for their listing.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function promptSetupFAQ(client, recipient) {
+function promptSetupFAQ(recipient) {
   const text = t.faq.question;
   const replies = [
     {
@@ -133,10 +128,9 @@ function promptSetupFAQ(client, recipient) {
 /**
  * Asks the seller if they would like to setup a queue for their listing.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function promptSetupQueue(client, recipient) {
+function promptSetupQueue(recipient) {
   const text = t.queue.question;
   const replies = [
     {

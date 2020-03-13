@@ -1,5 +1,5 @@
 const { db } = require("../../../db");
-const send = require("../../../send");
+const { send } = require("../../../client");
 const t = require("../../../copy.json");
 
 // AUTOMATED REPLIES
@@ -7,10 +7,9 @@ const t = require("../../../copy.json");
 /**
  * Asks the user if they are the seller or buyer of the given item.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function promptUserCategorization(client, recipient, listingId) {
+function promptUserCategorization(recipient, listingId) {
   const text = t.user_categorization.question;
   const replies = [
     {
@@ -30,10 +29,9 @@ function promptUserCategorization(client, recipient, listingId) {
 /**
  * Displays the listings that a user is on a queue for.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function showInterests(client, recipient) {
+function showInterests(recipient) {
   const user = db.ref(`users/${recipient.id}`);
   user.once("value", snapshot => {
     const val = snapshot.val();
@@ -48,10 +46,9 @@ function showInterests(client, recipient) {
 /**
  * Displays the listings that a user has a queue set up for.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function showListings(client, recipient) {
+function showListings(recipient) {
   const user = db.ref(`users/${recipient.id}`);
   user.once("value", snapshot => {
     const val = snapshot.val();

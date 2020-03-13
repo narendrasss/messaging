@@ -114,33 +114,6 @@ async function handleText(recipient, message) {
   return send.text(recipient, message.text);
 }
 
-function handleAttachments(recipient, message) {
-  const { url } = message.attachments[0].payload;
-  const template = {
-    template_type: "generic",
-    elements: [
-      {
-        title: "Is this the right picture?",
-        subtitle: "Tap a button to answer.",
-        image_url: url,
-        buttons: [
-          {
-            type: "postback",
-            title: "Yes!",
-            payload: "yes"
-          },
-          {
-            type: "postback",
-            title: "No!",
-            payload: "no"
-          }
-        ]
-      }
-    ]
-  };
-  send.template(recipient, template);
-}
-
 function handleListing(recipient, message) {
   const listingsRef = db.ref("listings");
   const { title } = message.attachments[0].payload;

@@ -3,7 +3,6 @@ const { getMessageType, messageTypes } = require("./helpers");
 
 const handlerMap = {
   [messageTypes.TEXT]: handlers.handleText,
-  [messageTypes.ATTACHMENT]: handlers.handleAttachments,
   [messageTypes.LISTING]: handlers.handleListing,
   [messageTypes.QUICK_REPLY]: handlers.handleQuickReply
 };
@@ -15,13 +14,13 @@ function messagesController(client) {
     const recipient = { id: sender_info.value };
     const handler = handlerMap[getMessageType(message)];
     if (!handler) {
-      return client.sendText(recipient, "Sorry, we don't support that action.");
+      return send.text(recipient, "Sorry, we don't support that action.");
     }
     try {
-      return handler(client, recipient, message);
+      return handler(recipient, message);
     } catch (err) {
       console.error(err);
-      return client.sendText(recipient, "Oops, something went wrong.");
+      return send.text(recipient, "Oops, something went wrong.");
     }
   };
 }

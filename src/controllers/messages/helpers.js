@@ -2,9 +2,7 @@ const t = require("../../copy.json");
 
 const messageTypes = {
   TEXT: "text",
-  MULTIPLE: "multiple",
   LISTING: "listing",
-  ATTACHMENT: "attachment",
   UNSUPPORTED: "unsupported",
   QUICK_REPLY: "quick-reply"
 };
@@ -17,15 +15,11 @@ function getMessageType(message) {
     return messageTypes.TEXT;
   }
   if (message.attachments) {
-    if (message.attachments.length > 1) {
-      return messageTypes.MULTIPLE;
-    }
     const payload = message.attachments[0].payload;
     if (payload) {
       if (payload.url.includes("marketplace/item")) {
         return messageTypes.LISTING;
       }
-      return messageTypes.ATTACHMENT;
     }
   }
   return messageTypes.UNSUPPORTED;

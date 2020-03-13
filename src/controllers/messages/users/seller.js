@@ -1,5 +1,5 @@
 const { db } = require("../../../db");
-const { client, send } = require("../../../client");
+const { getUserProfile, send } = require("../../../client");
 const { getContext, setContext, state } = require("../../../context");
 const { getSellerStatusMessage } = require("../helpers");
 const t = require("../../../copy.json");
@@ -16,7 +16,7 @@ function setQueue(listingId, hasQueue) {
  * @param {*} recipient
  * @param {*} queue
  */
-function displayQueue(recipient, queue) {
+async function displayQueue(recipient, queue) {
   const q = queue || [];
   let message =
     "There " +
@@ -24,10 +24,11 @@ function displayQueue(recipient, queue) {
     "in the queue.\n";
 
   for (const psid of q) {
-    const { first_name, last_name } = client
-      .getUserProfile(psid, ["first_name", "last_name"])
-      .then(() => (message += `${first_name} ${last_name}\n`))
-      .catch(err => console.error(err));
+    const user = await getUserProfile({ id: psid }, [
+      "first_name",
+      "last_name"
+    ]);
+    message += `${user.first_name} ${user.last_name}\n`;
   }
   send.text(recipient, message.substring(0, message.length - 1));
 }

@@ -1,6 +1,6 @@
 const { db } = require("../../db");
 const { getContext, setContext, state } = require("../../context");
-const { send } = require("../../client");
+const { getUserProfile, send } = require("../../client");
 const { getListingId } = require("./helpers");
 const {
   promptUserCategorization,
@@ -45,9 +45,7 @@ async function handleText(client, recipient, message) {
         await deactivateRoom(roomId);
         removeContext(to);
         removeContext(recipient.id);
-        const { first_name } = await client.getUserProfile(recipient.id, [
-          "first_name"
-        ]);
+        const { first_name } = await getUserProfile(recipient, ["first_name"]);
         await send.text({ id: to }, `${first_name} has left the chat.`);
         return send.text(recipient, "Successfully disconnected.");
       default:
@@ -102,7 +100,7 @@ async function handleText(client, recipient, message) {
       await activateRoom(roomId);
     }
 
-    const { first_name } = await client.getUserProfile(seller, ["first_name"]);
+    const { first_name } = await getUserProfile(seller, ["first_name"]);
     return send
       .text(
         recipient,

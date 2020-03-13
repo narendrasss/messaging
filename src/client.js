@@ -34,8 +34,17 @@ async function text(recipient, text) {
   }
 }
 
+async function getUserProfile(recipient, props) {
+  try {
+    return client.getUserProfile(recipient.id, props);
+  } catch (err) {
+    returnconsole.error(err);
+  }
+}
+
 module.exports = {
   client,
+  getUserProfile,
   send: {
     quickReplies,
     template,

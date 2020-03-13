@@ -1,5 +1,10 @@
 const { db } = require("../../db");
-const { getContext, setContext, state } = require("../../state/context");
+const {
+  getContext,
+  setContext,
+  removeContext,
+  state
+} = require("../../state/context");
 const { getUserProfile, send } = require("../../client");
 const { getListingId } = require("./helpers");
 const handlers = require("../../state/handlers");
@@ -28,8 +33,8 @@ async function handleText(recipient, message) {
           data: { to, roomId }
         } = ctx;
         await rooms.deactivateRoom(roomId);
-        rooms.removeContext(to);
-        rooms.removeContext(recipient.id);
+        removeContext(to);
+        removeContext(recipient.id);
         const { first_name } = await getUserProfile(recipient, ["first_name"]);
         await send.text({ id: to }, `${first_name} has left the chat.`);
         return send.text(recipient, "Successfully disconnected.");
@@ -61,15 +66,12 @@ async function handleText(recipient, message) {
     }
 
     const { first_name } = await getUserProfile(seller, ["first_name"]);
-    return send
-      .text(
-        recipient,
-        `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
-      )
-      .then(() => {
-        setContext(recipient.id, "chatting", { to: seller, roomId });
-        setContext(seller, "chatting", { to: recipient.id, roomId });
-      });
+    setContext(recipient.id, "chatting", { to: seller, roomId });
+    setContext(seller, "chatting", { to: recipient.id, roomId });
+    return send.text(
+      recipient,
+      `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
+    );
   }
   return send.text(recipient, message.text);
 }
@@ -82,14 +84,13 @@ function handleListing(recipient, message) {
     setContext(recipient.id, "", { listingId, title });
     const listing = snapshot.val();
     if (listing) {
-      const { seller, has_queue, queue } = listing;
+      const { seller, has_queue, queue = [] } = listing;
       if (seller !== recipient.id) {
         if (has_queue) {
-          const q = queue || [];
-          if (!q.includes(recipient.id)) {
-            return buyer.promptInterestedBuyer(recipient, q);
+          if (!queue.includes(recipient.id)) {
+            return buyer.promptInterestedBuyer(recipient, queue);
           }
-          return buyer.notifyBuyerStatus(recipient, q);
+          return buyer.notifyBuyerStatus(recipient, queue);
         }
         return send.text(recipient, t.buyer.no_queue);
       } else {

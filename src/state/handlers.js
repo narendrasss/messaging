@@ -5,16 +5,16 @@ const rooms = require("../controllers/messages/rooms");
 const listings = require("../db/listings");
 
 function chatting(recipient) {
-  const { to, roomId } = ctx.data;
+  const { to, roomId } = getContext(recipient.id).data;
   return rooms.sendMessage(roomId, recipient.id, to, message.text);
 }
 
 function faqSetup(recipient) {
-  const { data } = ctx;
+  const { data } = getContext(recipient.id);
   // if the user is currently setting up their FAQ
-  const answeredQuestions = getContext(recipient.id).data.questions;
+  const answeredQuestions = data.questions;
   setContext(recipient.id, state.FAQ_SETUP, {
-    ...getContext(recipient.id).data,
+    ...data,
     questions: answeredQuestions + 1
   });
 
@@ -35,7 +35,7 @@ function faqSetup(recipient) {
   } else {
     // if the user has answered all the questions
     setContext(recipient.id, state.FAQ_DONE, {
-      ...getContext(recipient.id).data
+      ...data
     });
     return send.text(recipient, "Thanks! A FAQ has been set up.");
   }

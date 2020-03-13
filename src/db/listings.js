@@ -1,4 +1,4 @@
-const { db } = require("../../../db");
+const { db } = require(".");
 
 /**
  * Adds listingId to array of listings associated with seller given by userId

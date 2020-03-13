@@ -2,26 +2,9 @@ const { db } = require("../../db");
 const { getContext, setContext, state } = require("../../context");
 const { getUserProfile, send } = require("../../client");
 const { getListingId } = require("./helpers");
-const {
-  promptUserCategorization,
-  showInterests,
-  showListings
-} = require("./users/user");
-const {
-  addUserToQueue,
-  notifyBuyerStatus,
-  promptInterestedBuyer,
-  removeUserFromQueue
-} = require("./users/buyer");
-const {
-  displayQueue,
-  setupFAQ,
-  promptSellerListing,
-  promptSetupFAQ,
-  promptSetupQueue,
-  promptStart,
-  setQueue
-} = require("./users/seller");
+const user = require("./users/user");
+const buyer = require("./users/buyer");
+const seller = require("./users/seller");
 const listings = require("../../db/listings");
 const t = require("../../copy.json");
 
@@ -127,20 +110,20 @@ function handleListing(recipient, message) {
         if (has_queue) {
           const q = queue || [];
           if (!q.includes(recipient.id)) {
-            return promptInterestedBuyer(recipient, q);
+            return buyer.promptInterestedBuyer(recipient, q);
           }
-          return notifyBuyerStatus(recipient, q);
+          return buyer.notifyBuyerStatus(recipient, q);
         }
         return send.text(recipient, t.buyer.no_queue);
       } else {
         if (has_queue) {
-          return promptSellerListing(recipient, listing);
+          return seller.promptSellerListing(recipient, listing);
         }
-        return promptSetupQueue(recipient);
+        return seller.promptSetupQueue(recipient);
       }
     }
     setContext(recipient.id, state.CATEGORIZE, { listingId, title });
-    return promptUserCategorization(recipient, listingId);
+    return user.promptUserCategorization(recipient, listingId);
   });
 }
 
@@ -167,34 +150,34 @@ function handleQuickReply(recipient, message) {
           price: 0,
           title
         });
-        return promptSetupQueue(recipient);
+        return seller.promptSetupQueue(recipient);
       case "setup-faq":
-        return setupFAQ(recipient, listingId);
+        return seller.setupFAQ(recipient, listingId);
       case "skip-faq":
-        return promptStart(recipient, t.faq.no_faq + t.general.next);
+        return seller.promptStart(recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
-        setQueue(listingId, true);
+        seller.setQueue(listingId, true);
         await send.text(recipient, "A queue has been sucessfuly set up.");
-        return promptSetupFAQ(recipient);
+        return seller.promptSetupFAQ(recipient);
       case "add-queue":
-        return addUserToQueue(recipient, listingId);
+        return buyer.addUserToQueue(recipient, listingId);
       case "display-queue":
-        return displayQueue(recipient, listing.queue);
+        return seller.displayQueue(recipient, listing.queue);
       case "skip-queue":
-        return promptSetupFAQ(recipient);
+        return seller.promptSetupFAQ(recipient);
       case "leave-queue":
-        return removeUserFromQueue(recipient, listingId, title);
+        return buyer.removeUserFromQueue(recipient, listingId, title);
       case "remove-listing":
         listings.removeListing(recipient.id, listingId);
-        return promptStart(recipient, t.seller.remove_listing);
+        return seller.promptStart(recipient, t.seller.remove_listing);
       case "show-listings":
-        return showListings(recipient);
+        return user.showListings(recipient);
       case "show-interests":
-        return showInterests(recipient);
+        return user.showInterests(recipient);
       case "show-faq":
         const { queue = [], faq = [] } = listing;
         await send.text(recipient, formatFAQ(faq));
-        return promptInterestedBuyer(recipient, queue);
+        return buyer.promptInterestedBuyer(recipient, queue);
       case "quit":
         // TODO
         send.text(recipient, "Not implemented.");

@@ -1,5 +1,5 @@
 const { db } = require("../../../db");
-const context = require("../../../context");
+const send = require("../../../send");
 const t = require("../../../copy.json");
 
 // AUTOMATED REPLIES
@@ -24,9 +24,7 @@ function promptUserCategorization(client, recipient, listingId) {
       payload: "buyer"
     }
   ];
-  client
-    .sendQuickReplies(recipient, replies, text)
-    .catch(err => console.error(err));
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
@@ -60,7 +58,7 @@ function showListings(client, recipient) {
     if (val) {
       const { listings_sale } = val;
       if (!listings_sale) {
-        client.sendText(recipient, "You haven't shared any listings yet.");
+        send.text(recipient, "You haven't shared any listings yet.");
       } else {
         _constructTemplate(listings_sale, "generic").then(template => {
           client

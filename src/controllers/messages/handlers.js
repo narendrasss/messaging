@@ -13,25 +13,15 @@ const {
   removeUserFromQueue
 } = require("./users/buyer");
 const {
-  addListing,
-  createListing,
-  removeListing,
   displayQueue,
   setupFAQ,
   promptSellerListing,
   promptSetupFAQ,
   promptSetupQueue,
   promptStart,
-  setSellerPrice,
   setQueue
 } = require("./users/seller");
-const {
-  activateRoom,
-  deactivateRoom,
-  getRoom,
-  makeRoom,
-  sendMessage
-} = require("./rooms");
+const listings = require("./db/listingss");
 const t = require("../../copy.json");
 
 async function handleText(client, recipient, message) {
@@ -86,7 +76,7 @@ async function handleText(client, recipient, message) {
         "Oops, I don't understand that. Please type in a number."
       );
     }
-    setSellerPrice(data.listingId, price);
+    listings.setSellerPrice(data.listingId, price);
 
     if (answeredQuestions < t.faq.questions.length) {
       // if the user hasn't answered all the questions
@@ -168,10 +158,10 @@ function handleAttachments(client, recipient, message) {
 }
 
 function handleListing(client, recipient, message) {
-  const listings = db.ref("listings");
+  const listingsRef = db.ref("listings");
   const { title } = message.attachments[0].payload;
   const listingId = getListingId(message);
-  listings.child(listingId).once("value", snapshot => {
+  listingsRef.child(listingId).once("value", snapshot => {
     setContext(recipient.id, "", { listingId, title });
     const listing = snapshot.val();
     if (listing) {
@@ -211,8 +201,8 @@ function handleQuickReply(client, recipient, message) {
       case "buyer":
         return sendText(client, recipient, t.buyer.no_queue);
       case "seller":
-        addListing(recipient.id, listingId);
-        createListing(listingId, {
+        listings.addListing(recipient.id, listingId);
+        listings.createListing(listingId, {
           seller: recipient.id,
           has_queue: false,
           queue: [],
@@ -242,7 +232,7 @@ function handleQuickReply(client, recipient, message) {
       case "leave-queue":
         return removeUserFromQueue(client, recipient, listingId, title);
       case "remove-listing":
-        removeListing(recipient.id, listingId);
+        listings.removeListing(recipient.id, listingId);
         return promptStart(client, recipient, t.seller.remove_listing);
       case "show-listings":
         return showListings(client, recipient);

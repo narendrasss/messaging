@@ -84,6 +84,15 @@ function getSellerStatusMessage(listing) {
   );
 }
 
+function getUpdatedSellerQueueMessage(queue = [], title) {
+  const length = queue.length;
+  return length === 0
+    ? `There's now no one waiting for ${title}.`
+    : `There ${length === 1 ? "is" : "are"} now ${queue.length} ${
+        length === 1 ? "person" : "people"
+      } waiting for ${title}.`;
+}
+
 function sendText(client, recipient, text) {
   return client.sendText(recipient, text).catch(err => console.error(err));
 }
@@ -94,6 +103,7 @@ module.exports = {
   getQueueMessage,
   getUpdatedQueueMessage,
   getSellerStatusMessage,
+  getUpdatedSellerQueueMessage,
   messageTypes,
   sendText
 };

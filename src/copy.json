@@ -11,6 +11,16 @@
     "show_faq": "See FAQ",
     "leave_queue": "Leave queue"
   },
+  "faq": {
+    "question": "Would you like to setup a FAQ?",
+    "setup": "Yes, please.",
+    "skip": "Not right now.",
+    "no_faq": "You can set up a faq any time in the future by sharing the post again.",
+    "questions": ["How much does it cost?"]
+  },
+  "general": {
+    "next": "What would you like to do next?"
+  },
   "queue": {
     "did_add": "A queue has been set up! What would you like to do next?",
     "did_not_add": "You can set up a queue any time in the future by sharing the post again.",
@@ -22,6 +32,7 @@
   "seller": {
     "item_sold": "Remove item from listings.",
     "own_listing": "This is one of your listings!",
+    "remove_listing": "This item was successfully removed from your listings. What would you like to do next?",
     "quit": "Quit",
     "see_queue": "Display users in the queue."
   },

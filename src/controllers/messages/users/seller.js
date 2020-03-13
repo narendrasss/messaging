@@ -1,4 +1,5 @@
 const { db } = require("../../../db");
+const { getContext, setContext, state } = require("../../../context");
 const { getSellerStatusMessage, sendText } = require("../helpers");
 const t = require("../../../copy.json");
 
@@ -30,6 +31,31 @@ function addListing(userId, listingId) {
 }
 
 /**
+ * Removes listing from list of listings and also from seller's list of listings.
+ *
+ * @param {string} userId
+ * @param {string} listingId
+ */
+function removeListing(userId, listingId) {
+  // remove listing from list of listings
+  const listingsRef = db.ref("listings");
+  listingsRef.once("value", snapshot => snapshot.child(listingId).ref.remove());
+
+  // remove listing from user's listings_sale array
+  const listings_sale = db.ref(`users/${userId}/listings_sale`);
+  listings_sale.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
+      const index = val.indexOf(listingId);
+      if (index >= 0) {
+        val.splice(index, 1);
+        listings_sale.set(val);
+      }
+    }
+  });
+}
+
+/**
  * Creates listing object in database
  *
  * @param {string} listingId
@@ -39,6 +65,21 @@ function createListing(listingId, listing) {
   db.ref("listings")
     .child(listingId)
     .set(listing);
+}
+
+/**
+ * Sets the price on a listing
+ *
+ * @param {string} listingId
+ * @param {string} price
+ */
+function setSellerPrice(listingId, price) {
+  const priceRef = db.ref(`listings/${listingId}/price`);
+  return priceRef.set(price);
+}
+
+function setQueue(listingId, hasQueue) {
+  return db.ref(`listings/${listingId}/has_queue`).set(hasQueue);
 }
 
 // AUTOMATED REPLIES
@@ -64,6 +105,20 @@ function displayQueue(client, recipient, queue) {
       .catch(err => console.error(err));
   }
   sendText(client, recipient, message.substring(0, message.length - 1));
+}
+
+/**
+ * Asks the user the first question in the list of FAQ.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ */
+function setupFAQ(client, recipient) {
+  setContext(recipient.id, state.FAQ_SETUP, {
+    ...getContext(recipient.id).data,
+    question: 0
+  });
+  sendText(client, recipient, t.faq.questions[0]);
 }
 
 /**
@@ -129,13 +184,35 @@ function promptSellerListing(client, recipient, listing) {
 }
 
 /**
- * Asks the seller if they would like to setup a queue for the given listing.
+ * Asks the seller if they would like to setup a FAQ for their listing.
  *
  * @param {object} client
  * @param {object} recipient
- * @param {string} listingId
  */
-function promptSetupQueue(client, recipient, listingId) {
+function promptSetupFAQ(client, recipient) {
+  const text = t.faq.question;
+  const replies = [
+    {
+      content_type: "text",
+      title: t.faq.setup,
+      payload: "setup-faq"
+    },
+    {
+      content_type: "text",
+      title: t.faq.skip,
+      payload: "skip-faq"
+    }
+  ];
+  client.sendQuickReplies(recipient, replies, text);
+}
+
+/**
+ * Asks the seller if they would like to setup a queue for their listing.
+ *
+ * @param {object} client
+ * @param {object} recipient
+ */
+function promptSetupQueue(client, recipient) {
   const text = t.queue.question;
   const replies = [
     {
@@ -155,8 +232,13 @@ function promptSetupQueue(client, recipient, listingId) {
 module.exports = {
   addListing,
   createListing,
+  removeListing,
   displayQueue,
+  setupFAQ,
   promptSellerListing,
+  promptSetupFAQ,
   promptSetupQueue,
-  promptStart
+  promptStart,
+  setSellerPrice,
+  setQueue
 };

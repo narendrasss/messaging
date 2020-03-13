@@ -1,5 +1,5 @@
 const { db } = require("../../db");
-const context = require("../../context");
+const { getContext, setContext, state } = require("../../context");
 const { getListingId, sendText } = require("./helpers");
 const {
   promptUserCategorization,
@@ -15,10 +15,15 @@ const {
 const {
   addListing,
   createListing,
+  removeListing,
   displayQueue,
+  setupFAQ,
   promptSellerListing,
+  promptSetupFAQ,
   promptSetupQueue,
-  promptStart
+  promptStart,
+  setSellerPrice,
+  setQueue
 } = require("./users/seller");
 const {
   activateRoom,
@@ -30,7 +35,7 @@ const {
 const t = require("../../copy.json");
 
 async function handleText(client, recipient, message) {
-  const ctx = context.getContext(recipient.id);
+  const ctx = getContext(recipient.id);
   if (message.text.startsWith("\\")) {
     // Handle commands here
     const command = message.text.substring(1);
@@ -48,8 +53,8 @@ async function handleText(client, recipient, message) {
           data: { to, roomId }
         } = ctx;
         await deactivateRoom(roomId);
-        context.removeContext(to);
-        context.removeContext(recipient.id);
+        removeContext(to);
+        removeContext(recipient.id);
         const { first_name } = await client.getUserProfile(recipient.id, [
           "first_name"
         ]);
@@ -63,8 +68,40 @@ async function handleText(client, recipient, message) {
     const { to, roomId } = ctx.data;
     return sendMessage(roomId, recipient.id, to, message.text);
   }
+  if (ctx && ctx.state === state.FAQ_SETUP) {
+    const { data } = ctx;
+    // if the user is currently setting up their FAQ
+    const answeredQuestions = getContext(recipient.id).data.questions;
+    setContext(recipient.id, state.FAQ_SETUP, {
+      ...getContext(recipient.id).data,
+      questions: answeredQuestions + 1
+    });
+
+    // 1. Price
+    const price = parseInt(message.text);
+    if (isNaN(price)) {
+      return sendText(
+        client,
+        recipient,
+        "Oops, I don't understand that. Please type in a number."
+      );
+    }
+    setSellerPrice(data.listingId, price);
+
+    if (answeredQuestions < t.faq.questions.length) {
+      // if the user hasn't answered all the questions
+      const currentQuestion = t.faq.questions[answeredQuestions];
+      return sendText(client, recipient, currentQuestion);
+    } else {
+      // if the user has answered all the questions
+      setContext(recipient.id, state.FAQ_DONE, {
+        ...getContext(recipient.id).data
+      });
+      return sendText(client, recipient, "Thanks! A FAQ has been set up.");
+    }
+  }
   if (message.text === "message seller") {
-    const { data } = context.getContext(recipient.id);
+    const { data } = ctx;
     const { listingId } = data;
     const snapshot = await db.ref(`listings/${listingId}`).once("value");
     const { seller } = snapshot.val();
@@ -82,8 +119,8 @@ async function handleText(client, recipient, message) {
       recipient,
       `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
     ).then(() => {
-      context.setContext(recipient.id, "chatting", { to: seller, roomId });
-      context.setContext(seller, "chatting", { to: recipient.id, roomId });
+      setContext(recipient.id, "chatting", { to: seller, roomId });
+      setContext(seller, "chatting", { to: recipient.id, roomId });
     });
   }
   return client.sendText(recipient, message.text);
@@ -135,7 +172,7 @@ function handleListing(client, recipient, message) {
   const { title } = message.attachments[0].payload;
   const listingId = getListingId(message);
   listings.child(listingId).once("value", snapshot => {
-    context.setContext(recipient.id, "", { listingId, title });
+    setContext(recipient.id, "", { listingId, title });
     const listing = snapshot.val();
     if (listing) {
       const { seller, has_queue, queue } = listing;
@@ -152,63 +189,69 @@ function handleListing(client, recipient, message) {
         if (has_queue) {
           return promptSellerListing(client, recipient, listing);
         }
-        return promptSetupQueue(client, recipient, listingId);
+        return promptSetupQueue(client, recipient);
       }
     }
-    context.setContext(recipient.id, "categorize", { listingId, title });
+    setContext(recipient.id, state.CATEGORIZE, { listingId, title });
     return promptUserCategorization(client, recipient, listingId);
   });
 }
 
 function handleQuickReply(client, recipient, message) {
   const { payload } = message.quick_reply;
-  const { data } = context.getContext(recipient.id);
+  const { data } = getContext(recipient.id);
   const { listingId } = data;
 
   const listingRef = db.ref(`listings/${listingId}`);
 
-  listingRef.once("value", snapshot => {
+  listingRef.once("value", async snapshot => {
+    const listing = snapshot.val();
+
     switch (payload) {
       case "buyer":
         return sendText(client, recipient, t.buyer.no_queue);
       case "seller":
         addListing(recipient.id, listingId);
-        return promptSetupQueue(client, recipient, listingId);
-      case "setup-queue":
         createListing(listingId, {
           seller: recipient.id,
-          has_queue: true,
+          has_queue: false,
           queue: [],
           faq: [],
           price: 0,
           title: data.title
         });
-        return promptStart(client, recipient, t.queue.did_add);
+        return promptSetupQueue(client, recipient);
+      case "setup-faq":
+        return setupFAQ(client, recipient, listingId);
+      case "skip-faq":
+        return promptStart(client, recipient, t.faq.no_faq + t.general.next);
+      case "setup-queue":
+        setQueue(listingId, true);
+        await sendText(
+          client,
+          recipient,
+          "A queue has been sucessfuly set up."
+        );
+        return promptSetupFAQ(client, recipient);
       case "add-queue":
         return addUserToQueue(client, recipient, listingId);
-      case "display-queue": {
-        const { queue } = snapshot.val();
-        return displayQueue(client, recipient, queue);
-      }
-      case "skip-queue": {
-        const { queue } = snapshot.val();
-        return promptInterestedBuyer(client, recipient, queue);
-      }
+      case "display-queue":
+        return displayQueue(client, recipient, listing.queue);
+      case "skip-queue":
+        return promptSetupFAQ(client, recipient);
       case "leave-queue":
         return removeUserFromQueue(client, recipient, listingId);
       case "remove-listing":
-        // TODO
-        sendText(client, recipient, "Not implemented.");
-        break;
+        removeListing(recipient.id, listingId);
+        return promptStart(client, recipient, t.seller.remove_listing);
       case "show-listings":
         return showListings(client, recipient);
       case "show-interests":
         return showInterests(client, recipient);
-      case "show-faq": {
-        const { queue, faq } = snapshot.val();
-        sendText(client, recipient, formatFAQ(faq || []));
-        return promptInterestedBuyer(client, recipient, queue || []);
-      }
+      case "show-faq":
+        const { queue = [], faq = [] } = listing;
+        await sendText(client, recipient, formatFAQ(faq));
+        return promptInterestedBuyer(client, recipient, queue);
       case "quit":
         // TODO
         sendText(client, recipient, "Not implemented.");

@@ -95,7 +95,7 @@ function addUserToQueue(client, recipient, listingId) {
         queue.set(val);
       } else {
         const message = getQueueMessage(recipient.id, val);
-        sendText(client, recipient, message);
+        await sendText(client, recipient, message);
       }
     } else {
       queue.set([recipient.id]);

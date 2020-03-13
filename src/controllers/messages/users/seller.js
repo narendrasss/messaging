@@ -1,6 +1,7 @@
 const { db } = require("../../../db");
+const send = require("../../../send");
 const { getContext, setContext, state } = require("../../../context");
-const { getSellerStatusMessage, sendText } = require("../helpers");
+const { getSellerStatusMessage } = require("../helpers");
 const t = require("../../../copy.json");
 
 function setQueue(listingId, hasQueue) {
@@ -29,7 +30,7 @@ function displayQueue(client, recipient, queue) {
       .then(() => (message += `${first_name} ${last_name}\n`))
       .catch(err => console.error(err));
   }
-  sendText(client, recipient, message.substring(0, message.length - 1));
+  send.text(recipient, message.substring(0, message.length - 1));
 }
 
 /**
@@ -43,7 +44,7 @@ function setupFAQ(client, recipient) {
     ...getContext(recipient.id).data,
     question: 0
   });
-  sendText(client, recipient, t.faq.questions[0]);
+  send.text(recipient, t.faq.questions[0]);
 }
 
 /**
@@ -71,9 +72,7 @@ function promptStart(client, recipient, text) {
       payload: "quit"
     }
   ];
-  client
-    .sendQuickReplies(recipient, replies, text)
-    .catch(err => console.error(err));
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
@@ -105,7 +104,7 @@ function promptSellerListing(client, recipient, listing) {
       payload: "quit"
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
@@ -128,7 +127,7 @@ function promptSetupFAQ(client, recipient) {
       payload: "skip-faq"
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
@@ -151,7 +150,7 @@ function promptSetupQueue(client, recipient) {
       payload: "skip-queue"
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  send.quickReplies(recipient, replies, text);
 }
 
 module.exports = {

@@ -190,7 +190,7 @@ function handleQuickReply(client, recipient, message) {
         return showInterests(client, recipient);
       case "show-faq":
         const { queue = [], faq = [] } = listing;
-        sendText(client, recipient, formatFAQ(faq));
+        await sendText(client, recipient, formatFAQ(faq));
         return promptInterestedBuyer(client, recipient, queue);
       case "quit":
         // TODO

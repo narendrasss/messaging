@@ -25,45 +25,105 @@ const {
   setSellerPrice,
   setQueue
 } = require("./users/seller");
+const {
+  activateRoom,
+  deactivateRoom,
+  getRoom,
+  makeRoom,
+  sendMessage
+} = require("./rooms");
 const t = require("../../copy.json");
 
-function handleText(client, recipient, message) {
-  if (getContext(recipient.id)) {
-    const { state: currentState, data } = getContext(recipient.id);
-    if (currentState === state.FAQ_SETUP) {
-      // if the user is currently setting up their FAQ
-      const answeredQuestions = getContext(recipient.id).data.questions;
-      setContext(recipient.id, state.FAQ_SETUP, {
-        ...getContext(recipient.id).data,
-        questions: answeredQuestions + 1
-      });
-
-      // 1. Price
-      const price = parseInt(message.text);
-      if (isNaN(price)) {
-        return sendText(
-          client,
-          recipient,
-          "Oops, I don't understand that. Please type in a number."
-        );
-      }
-      setSellerPrice(data.listingId, price);
-
-      if (answeredQuestions < t.faq.questions.length) {
-        // if the user hasn't answered all the questions
-        const currentQuestion = t.faq.questions[answeredQuestions];
-        sendText(client, recipient, currentQuestion);
-      } else {
-        // if the user has answered all the questions
-        setContext(recipient.id, state.FAQ_DONE, {
-          ...getContext(recipient.id).data
-        });
-        sendText(client, recipient, "Thanks! A FAQ has been set up.");
-      }
+async function handleText(client, recipient, message) {
+  const ctx = getContext(recipient.id);
+  if (message.text.startsWith("\\")) {
+    // Handle commands here
+    const command = message.text.substring(1);
+    switch (command) {
+      case "q":
+      case "quit":
+        if (!ctx || ctx.state !== "chatting") {
+          return sendText(
+            client,
+            recipient,
+            "It doesn't look like you're messaging anyone."
+          );
+        }
+        const {
+          data: { to, roomId }
+        } = ctx;
+        await deactivateRoom(roomId);
+        removeContext(to);
+        removeContext(recipient.id);
+        const { first_name } = await client.getUserProfile(recipient.id, [
+          "first_name"
+        ]);
+        sendText(client, { id: to }, `${first_name} has left the chat.`);
+        return sendText(client, recipient, "Successfully disconnected.");
+      default:
+        return;
     }
-  } else {
-    client.sendText(recipient, message.text);
   }
+  if (ctx && ctx.state === "chatting") {
+    const { to, roomId } = ctx.data;
+    return sendMessage(roomId, recipient.id, to, message.text);
+  }
+  if (ctx && ctx.state === state.FAQ_SETUP) {
+    const { data } = ctx;
+    // if the user is currently setting up their FAQ
+    const answeredQuestions = getContext(recipient.id).data.questions;
+    setContext(recipient.id, state.FAQ_SETUP, {
+      ...getContext(recipient.id).data,
+      questions: answeredQuestions + 1
+    });
+
+    // 1. Price
+    const price = parseInt(message.text);
+    if (isNaN(price)) {
+      return sendText(
+        client,
+        recipient,
+        "Oops, I don't understand that. Please type in a number."
+      );
+    }
+    setSellerPrice(data.listingId, price);
+
+    if (answeredQuestions < t.faq.questions.length) {
+      // if the user hasn't answered all the questions
+      const currentQuestion = t.faq.questions[answeredQuestions];
+      return sendText(client, recipient, currentQuestion);
+    } else {
+      // if the user has answered all the questions
+      setContext(recipient.id, state.FAQ_DONE, {
+        ...getContext(recipient.id).data
+      });
+      return sendText(client, recipient, "Thanks! A FAQ has been set up.");
+    }
+  }
+  if (message.text === "message seller") {
+    const { data } = ctx;
+    const { listingId } = data;
+    const snapshot = await db.ref(`listings/${listingId}`).once("value");
+    const { seller } = snapshot.val();
+
+    let roomId = await getRoom(seller, recipient.id);
+    if (!roomId) {
+      roomId = await makeRoom(listingId, [seller, recipient.id]);
+    } else {
+      await activateRoom(roomId);
+    }
+
+    const { first_name } = await client.getUserProfile(seller, ["first_name"]);
+    return sendText(
+      client,
+      recipient,
+      `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
+    ).then(() => {
+      setContext(recipient.id, "chatting", { to: seller, roomId });
+      setContext(seller, "chatting", { to: recipient.id, roomId });
+    });
+  }
+  return client.sendText(recipient, message.text);
 }
 
 function handleDebug(client, recipient, message) {

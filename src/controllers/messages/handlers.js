@@ -1,5 +1,10 @@
 const { db } = require("../../db");
-const { getContext, setContext, state } = require("../../context");
+const {
+  getContext,
+  setContext,
+  removeContext,
+  state
+} = require("../../context");
 const { getListingId, sendText } = require("./helpers");
 const {
   promptUserCategorization,
@@ -10,7 +15,8 @@ const {
   addUserToQueue,
   notifyBuyerStatus,
   promptInterestedBuyer,
-  removeUserFromQueue
+  removeUserFromQueue,
+  formatFAQ
 } = require("./users/buyer");
 const {
   addListing,
@@ -41,7 +47,7 @@ async function handleText(client, recipient, message) {
     const command = message.text.substring(1);
     switch (command) {
       case "q":
-      case "quit":
+      case "quit": {
         if (!ctx || ctx.state !== "chatting") {
           return sendText(
             client,
@@ -60,6 +66,7 @@ async function handleText(client, recipient, message) {
         ]);
         sendText(client, { id: to }, `${first_name} has left the chat.`);
         return sendText(client, recipient, "Successfully disconnected.");
+      }
       default:
         return;
     }
@@ -248,10 +255,11 @@ function handleQuickReply(client, recipient, message) {
         return showListings(client, recipient);
       case "show-interests":
         return showInterests(client, recipient);
-      case "show-faq":
+      case "show-faq": {
         const { queue = [], faq = [] } = listing;
         await sendText(client, recipient, formatFAQ(faq));
         return promptInterestedBuyer(client, recipient, queue);
+      }
       case "quit":
         // TODO
         sendText(client, recipient, "Not implemented.");

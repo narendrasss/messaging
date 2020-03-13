@@ -119,21 +119,22 @@ function addUserToQueue(client, recipient, listingId) {
  * @param {string} title
  */
 function removeUserFromQueue(client, recipient, listingId, title) {
-  const queue = db.ref(`listings/${listingId}/queue`);
-  queue.once("value", snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      const position = val.indexOf(recipient.id);
+  const listingRef = db.ref(`listings/${listingId}`);
+  listingRef.once("value", snapshot => {
+    const listing = snapshot.val();
+    const { queue } = listing;
+    if (queue) {
+      const position = queue.indexOf(recipient.id);
       if (position < 0) {
         sendText(client, recipient, t.buyer.not_in_queue);
       } else {
-        val.splice(position, 1);
-        queue.set(val);
+        queue.splice(position, 1);
+        listingRef.child("queue").set(queue);
         sendText(client, recipient, t.buyer.remove_queue);
 
-        for (const id of val) {
+        for (const id of queue) {
           const user = { id };
-          const text = getUpdatedQueueMessage(id, val, title);
+          const text = getUpdatedQueueMessage(id, queue, title);
           sendText(
             client,
             user,

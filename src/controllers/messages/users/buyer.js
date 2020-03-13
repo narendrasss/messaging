@@ -91,7 +91,7 @@ function addUserToQueue(client, recipient, listingId) {
       interests.set([listingId]);
     }
   });
-  queue.once("value", snapshot => {
+  queue.once("value", async snapshot => {
     const val = snapshot.val();
     if (val) {
       if (!val.includes(recipient.id)) {

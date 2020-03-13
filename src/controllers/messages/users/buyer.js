@@ -1,8 +1,5 @@
-const {
-  getQueueMessage,
-  getUpdatedQueueMessage,
-  sendText
-} = require("../helpers");
+const { getQueueMessage, getUpdatedQueueMessage } = require("../helpers");
+const send = require("../../../send");
 const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
@@ -48,13 +45,14 @@ function promptInterestedBuyer(client, recipient, queue) {
       payload: "skip-queue"
     }
   ];
-  sendText(client, recipient, text);
-  client.sendQuickReplies(recipient, replies, t.queue.buyer_question);
+  send
+    .text(recipient, text)
+    .then(() => send.quickReplies(recipient, replies, t.queue.buyer_question));
 }
 
 function notifyBuyerStatus(client, recipient, queue) {
-  sendText(client, recipient, getQueueMessage(recipient.id, queue));
-  client.sendQuickReplies(
+  send.text(recipient, getQueueMessage(recipient.id, queue));
+  send.quickReplies(
     recipient,
     [
       {
@@ -91,7 +89,7 @@ function addUserToQueue(client, recipient, listingId) {
       interests.set([listingId]);
     }
   });
-  queue.once("value", snapshot => {
+  queue.once("value", async snapshot => {
     const val = snapshot.val();
     if (val) {
       if (!val.includes(recipient.id)) {
@@ -99,12 +97,12 @@ function addUserToQueue(client, recipient, listingId) {
         queue.set(val);
       } else {
         const message = getQueueMessage(recipient.id, val);
-        await sendText(client, recipient, message);
+        await send.text(recipient, message);
       }
     } else {
       queue.set([recipient.id]);
     }
-    sendText(client, recipient, t.buyer.success_add_queue);
+    send.text(recipient, t.buyer.success_add_queue);
   });
 }
 
@@ -120,26 +118,25 @@ function addUserToQueue(client, recipient, listingId) {
  */
 function removeUserFromQueue(client, recipient, listingId, title) {
   const queue = db.ref(`listings/${listingId}/queue`);
-  queue.once("value", snapshot => {
+  queue.once("value", async snapshot => {
     const val = snapshot.val();
     if (val) {
       const position = val.indexOf(recipient.id);
       if (position < 0) {
-        sendText(client, recipient, t.buyer.not_in_queue);
+        send.text(recipient, t.buyer.not_in_queue);
       } else {
         val.splice(position, 1);
         queue.set(val);
-        sendText(client, recipient, t.buyer.remove_queue);
+        await send.text(recipient, t.buyer.remove_queue);
 
         for (const id of val) {
           const user = { id };
           const text = getUpdatedQueueMessage(id, val, title);
-          sendText(
-            client,
+          await send.text(
             user,
             "Someone from one of the listings you're watching has left the queue."
           );
-          sendText(client, user, text);
+          await send.text(user, text);
         }
       }
     }

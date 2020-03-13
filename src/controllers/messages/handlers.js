@@ -117,7 +117,7 @@ async function handleText(client, recipient, message) {
 }
 
 function handleDebug(client, recipient, message) {
-  client.sendTemplate(recipient, {
+  send.template(recipient, {
     template_type: "button",
     text: "DEBUG",
     buttons: [
@@ -154,7 +154,7 @@ function handleAttachments(client, recipient, message) {
       }
     ]
   };
-  client.sendTemplate(recipient, template);
+  send.template(recipient, template);
 }
 
 function handleListing(client, recipient, message) {

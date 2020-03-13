@@ -40,7 +40,7 @@ function showInterests(client, recipient) {
     if (val) {
       const { listings_buy } = val;
       const template = _constructTemplate(listings_buy, "generic");
-      return client.sendTemplate(recipient, template);
+      return send.template(recipient, template);
     }
   });
 }
@@ -60,18 +60,16 @@ function showListings(client, recipient) {
       if (!listings_sale) {
         send.text(recipient, "You haven't shared any listings yet.");
       } else {
-        _constructTemplate(listings_sale, "generic").then(template => {
-          client
-            .sendTemplate(recipient, template)
-            .catch(err => console.error(err));
-        });
+        _constructTemplate(listings_sale, "generic").then(template =>
+          send.template(recipient, template)
+        );
       }
     }
   });
 }
 
 /**
- * Private helper that constructs a template object to be used for client.sendTemplate.
+ * Private helper that constructs a template object to be used for send.template..
  *
  * @param {array} listings
  * @param {string} template_type

@@ -8,6 +8,14 @@ async function quickReplies(recipient, replies, text) {
   }
 }
 
+async function template(recipient, template) {
+  try {
+    await client.sendTemplate(recipient, template);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 async function text(recipient, text) {
   try {
     await client.sendText(recipient, text);
@@ -18,5 +26,6 @@ async function text(recipient, text) {
 
 module.exports = {
   quickReplies,
+  template,
   text
 };

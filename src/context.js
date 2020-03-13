@@ -1,3 +1,9 @@
+const state = {
+  CATEGORIZE: "categorize",
+  FAQ_SETUP: "faq-setup",
+  FAQ_DONE: "faq-done"
+};
+
 const context = {};
 
 function getContext(id) {
@@ -12,4 +18,4 @@ function removeContext(id) {
   delete context[id];
 }
 
-module.exports = { getContext, setContext, removeContext };
+module.exports = { getContext, setContext, removeContext, state };

@@ -22,7 +22,7 @@ const {
   promptStart,
   setQueue
 } = require("./users/seller");
-const listings = require("./db/listings");
+const listings = require("../../db/listings");
 const t = require("../../copy.json");
 
 async function handleText(recipient, message) {

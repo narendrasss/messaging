@@ -1,11 +1,13 @@
 const { db } = require("../../db");
-const { getContext, setContext, state } = require("../../context");
+const { getContext, setContext, state } = require("../../state/context");
 const { getUserProfile, send } = require("../../client");
 const { getListingId } = require("./helpers");
+const handlers = require("../../state/handlers");
 const user = require("./users/user");
 const buyer = require("./users/buyer");
 const seller = require("./users/seller");
 const listings = require("../../db/listings");
+const rooms = require("./rooms");
 const t = require("../../copy.json");
 
 async function handleText(recipient, message) {
@@ -16,7 +18,7 @@ async function handleText(recipient, message) {
     switch (command) {
       case "q":
       case "quit":
-        if (!ctx || ctx.state !== "chatting") {
+        if (!ctx || ctx.state !== state.CHATTING) {
           return send.text(
             recipient,
             "It doesn't look like you're messaging anyone."
@@ -25,9 +27,9 @@ async function handleText(recipient, message) {
         const {
           data: { to, roomId }
         } = ctx;
-        await deactivateRoom(roomId);
-        removeContext(to);
-        removeContext(recipient.id);
+        await rooms.deactivateRoom(roomId);
+        rooms.removeContext(to);
+        rooms.removeContext(recipient.id);
         const { first_name } = await getUserProfile(recipient, ["first_name"]);
         await send.text({ id: to }, `${first_name} has left the chat.`);
         return send.text(recipient, "Successfully disconnected.");
@@ -35,52 +37,27 @@ async function handleText(recipient, message) {
         return;
     }
   }
-  if (ctx && ctx.state === "chatting") {
-    const { to, roomId } = ctx.data;
-    return sendMessage(roomId, recipient.id, to, message.text);
-  }
-  if (ctx && ctx.state === state.FAQ_SETUP) {
-    const { data } = ctx;
-    // if the user is currently setting up their FAQ
-    const answeredQuestions = getContext(recipient.id).data.questions;
-    setContext(recipient.id, state.FAQ_SETUP, {
-      ...getContext(recipient.id).data,
-      questions: answeredQuestions + 1
-    });
 
-    // 1. Price
-    const price = parseInt(message.text);
-    if (isNaN(price)) {
-      return send.text(
-        recipient,
-        "Oops, I don't understand that. Please type in a number."
-      );
-    }
-    listings.setSellerPrice(data.listingId, price);
-
-    if (answeredQuestions < t.faq.questions.length) {
-      // if the user hasn't answered all the questions
-      const currentQuestion = t.faq.questions[answeredQuestions];
-      return send.text(recipient, currentQuestion);
-    } else {
-      // if the user has answered all the questions
-      setContext(recipient.id, state.FAQ_DONE, {
-        ...getContext(recipient.id).data
-      });
-      return send.text(recipient, "Thanks! A FAQ has been set up.");
+  if (ctx) {
+    switch (ctx.state) {
+      case state.CHATTING:
+        handlers.chatting(recipient);
+      case state.FAQ_SETUP:
+        handlers.faqSetup(recipient);
     }
   }
+
   if (message.text === "message seller") {
     const { data } = ctx;
     const { listingId } = data;
     const snapshot = await db.ref(`listings/${listingId}`).once("value");
     const { seller } = snapshot.val();
 
-    let roomId = await getRoom(seller, recipient.id);
+    let roomId = await rooms.getRoom(seller, recipient.id);
     if (!roomId) {
-      roomId = await makeRoom(listingId, [seller, recipient.id]);
+      roomId = await rooms.makeRoom(listingId, [seller, recipient.id]);
     } else {
-      await activateRoom(roomId);
+      await rooms.activateRoom(roomId);
     }
 
     const { first_name } = await getUserProfile(seller, ["first_name"]);

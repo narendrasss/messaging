@@ -1,5 +1,6 @@
 const state = {
   CATEGORIZE: "categorize",
+  CHATTING: "chatting",
   FAQ_SETUP: "faq-setup",
   FAQ_DONE: "faq-done"
 };

@@ -29,17 +29,25 @@ const t = require("../../copy.json");
 
 function handleText(client, recipient, message) {
   if (getContext(recipient.id)) {
-    const { state: currentState } = getContext(recipient.id);
+    const { state: currentState, data } = getContext(recipient.id);
     if (currentState === state.FAQ_SETUP) {
       // if the user is currently setting up their FAQ
+      const answeredQuestions = getContext(recipient.id).data.questions;
       setContext(recipient.id, state.FAQ_SETUP, {
         ...getContext(recipient.id).data,
         questions: answeredQuestions + 1
       });
-      const answeredQuestions = getContext(recipient.id).data.questions;
 
       // 1. Price
-      setSellerPrice(context.data.listingId, message);
+      const price = parseInt(message.text);
+      if (isNaN(price)) {
+        return sendText(
+          client,
+          recipient,
+          "Oops, I don't understand that. Please type in a number."
+        );
+      }
+      setSellerPrice(data.listingId, price);
 
       if (answeredQuestions < t.faq.questions.length) {
         // if the user hasn't answered all the questions
@@ -50,6 +58,7 @@ function handleText(client, recipient, message) {
         setContext(recipient.id, state.FAQ_DONE, {
           ...getContext(recipient.id).data
         });
+        sendText(client, recipient, "Thanks! A FAQ has been set up.");
       }
     }
   } else {
@@ -158,6 +167,11 @@ function handleQuickReply(client, recipient, message) {
         return promptStart(client, recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
         setQueue(listingId, true);
+        await sendText(
+          client,
+          recipient,
+          "A queue has been sucessfuly set up."
+        );
         return promptSetupFAQ(client, recipient);
       case "add-queue":
         return addUserToQueue(client, recipient, listingId);

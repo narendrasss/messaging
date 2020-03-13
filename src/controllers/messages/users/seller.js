@@ -75,12 +75,7 @@ function createListing(listingId, listing) {
  */
 function setSellerPrice(listingId, price) {
   const priceRef = db.ref(`listings/${listingId}/price`);
-  priceRef.once("value", snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      val.set(price);
-    }
-  });
+  return priceRef.set(price);
 }
 
 function setQueue(listingId, hasQueue) {

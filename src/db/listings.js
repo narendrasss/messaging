@@ -7,19 +7,21 @@ const { db } = require(".");
  * @param {string} listingId
  */
 function addListing(userId, listingId) {
-  const users = db.ref("users");
-  users.child(userId).once("value", snapshot => {
-    if (snapshot.val()) {
+  const userRef = db.ref(`users/${userId}`);
+  userRef.once("value", snapshot => {
+    const val = snapshot.val();
+    if (val) {
       // if the seller exists in the db
-      const { listings_sale = [] } = snapshot.val();
-      const user = users.child(userId);
-      user.set({
-        ...snapshot.val(),
-        listings_sale: [...listings_sale, listingId]
-      });
+      const { listings_sale = [] } = val;
+      if (!listings_sale.includes(listingId)) {
+        // if this listing doesn't already exist in the user's listings
+        userRef.update({
+          listings_sale: [...listings_sale, listingId]
+        });
+      }
     } else {
       // if the seller doesn't exist in the db
-      users.child(userId).set({
+      userRef.set({
         listings_sale: [listingId],
         listings_buy: []
       });
@@ -59,9 +61,13 @@ function removeListing(userId, listingId) {
  * @param {object} listing
  */
 function createListing(listingId, listing) {
-  db.ref("listings")
-    .child(listingId)
-    .set(listing);
+  const listingRef = db.ref(`listings/${listingId}`);
+
+  listingRef.once("value", snapshot => {
+    if (!snapshot.val()) {
+      listingRef.set(listing);
+    }
+  });
 }
 
 /**

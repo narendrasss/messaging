@@ -102,7 +102,7 @@ function handleListing(recipient, message) {
           }
           return buyer.notifyBuyerStatus(recipient, queue);
         }
-        return promptInterestedBuyerNoQueue(client, recipient, listing);
+        return buyer.promptInterestedBuyerNoQueue(recipient, listing);
       } else {
         if (has_queue) {
           return seller.promptSellerListing(recipient, listing);

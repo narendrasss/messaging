@@ -62,7 +62,6 @@ function removeListing(userId, listingId) {
  */
 function createListing(listingId, listing) {
   const listingRef = db.ref(`listings/${listingId}`);
-
   listingRef.once("value", snapshot => {
     if (!snapshot.val()) {
       listingRef.set(listing);

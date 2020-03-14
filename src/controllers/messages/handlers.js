@@ -15,6 +15,7 @@ const {
   addUserToQueue,
   notifyBuyerStatus,
   promptInterestedBuyer,
+  promptInterestedBuyerNoQueue,
   removeUserFromQueue,
   formatFAQ
 } = require("./users/buyer");
@@ -191,7 +192,7 @@ function handleListing(client, recipient, message) {
           }
           return notifyBuyerStatus(client, recipient, q);
         }
-        return sendText(client, recipient, t.buyer.no_queue);
+        return promptInterestedBuyerNoQueue(client, recipient, listing);
       } else {
         if (has_queue) {
           return promptSellerListing(client, recipient, listing);
@@ -216,7 +217,7 @@ function handleQuickReply(client, recipient, message) {
 
     switch (payload) {
       case "buyer":
-        return sendText(client, recipient, t.buyer.no_queue);
+        return sendText(client, recipient, t.buyer.no_share);
       case "seller":
         addListing(recipient.id, listingId);
         createListing(listingId, {

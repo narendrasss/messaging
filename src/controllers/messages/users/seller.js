@@ -1,82 +1,8 @@
 const { db } = require("../../../db");
-const { getContext, setContext, state } = require("../../../context");
-const { getSellerStatusMessage, sendText } = require("../helpers");
+const { getUserProfile, send } = require("../../../client");
+const { getContext, setContext, state } = require("../../../state/context");
+const { getSellerStatusMessage } = require("../helpers");
 const t = require("../../../copy.json");
-
-/**
- * Adds listingId to array of listings associated with seller given by userId
- *
- * @param {string} userId
- * @param {string} listingId
- */
-function addListing(userId, listingId) {
-  const users = db.ref("users");
-  users.child(userId).once("value", snapshot => {
-    if (snapshot.val()) {
-      // if the seller exists in the db
-      const { listings_sale = [] } = snapshot.val();
-      const user = users.child(userId);
-      user.set({
-        ...snapshot.val(),
-        listings_sale: [...listings_sale, listingId]
-      });
-    } else {
-      // if the seller doesn't exist in the db
-      users.child(userId).set({
-        listings_sale: [listingId],
-        listings_buy: []
-      });
-    }
-  });
-}
-
-/**
- * Removes listing from list of listings and also from seller's list of listings.
- *
- * @param {string} userId
- * @param {string} listingId
- */
-function removeListing(userId, listingId) {
-  // remove listing from list of listings
-  const listingsRef = db.ref("listings");
-  listingsRef.once("value", snapshot => snapshot.child(listingId).ref.remove());
-
-  // remove listing from user's listings_sale array
-  const listings_sale = db.ref(`users/${userId}/listings_sale`);
-  listings_sale.once("value", snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      const index = val.indexOf(listingId);
-      if (index >= 0) {
-        val.splice(index, 1);
-        listings_sale.set(val);
-      }
-    }
-  });
-}
-
-/**
- * Creates listing object in database
- *
- * @param {string} listingId
- * @param {object} listing
- */
-function createListing(listingId, listing) {
-  db.ref("listings")
-    .child(listingId)
-    .set(listing);
-}
-
-/**
- * Sets the price on a listing
- *
- * @param {string} listingId
- * @param {string} price
- */
-function setSellerPrice(listingId, price) {
-  const priceRef = db.ref(`listings/${listingId}/price`);
-  return priceRef.set(price);
-}
 
 function setQueue(listingId, hasQueue) {
   return db.ref(`listings/${listingId}/has_queue`).set(hasQueue);
@@ -87,11 +13,10 @@ function setQueue(listingId, hasQueue) {
 /**
  * Formats and sends a message containing the current queue to the seller.
  *
- * @param {*} client
  * @param {*} recipient
  * @param {*} queue
  */
-function displayQueue(client, recipient, queue) {
+async function displayQueue(recipient, queue) {
   const q = queue || [];
   let message =
     "There " +
@@ -99,36 +24,35 @@ function displayQueue(client, recipient, queue) {
     "in the queue.\n";
 
   for (const psid of q) {
-    const { first_name, last_name } = client
-      .getUserProfile(psid, ["first_name", "last_name"])
-      .then(() => (message += `${first_name} ${last_name}\n`))
-      .catch(err => console.error(err));
+    const user = await getUserProfile({ id: psid }, [
+      "first_name",
+      "last_name"
+    ]);
+    message += `${user.first_name} ${user.last_name}\n`;
   }
-  sendText(client, recipient, message.substring(0, message.length - 1));
+  send.text(recipient, message.substring(0, message.length - 1));
 }
 
 /**
  * Asks the user the first question in the list of FAQ.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function setupFAQ(client, recipient) {
+function setupFAQ(recipient) {
   setContext(recipient.id, state.FAQ_SETUP, {
     ...getContext(recipient.id).data,
     question: 0
   });
-  sendText(client, recipient, t.faq.questions[0]);
+  send.text(recipient, t.faq.questions[0]);
 }
 
 /**
  * Asks the user what they would like to do next.
  *
- * @param {object} client
  * @param {object} recipient
  * @param {string} text
  */
-function promptStart(client, recipient, text) {
+function promptStart(recipient, text) {
   const replies = [
     {
       content_type: "text",
@@ -146,9 +70,7 @@ function promptStart(client, recipient, text) {
       payload: "quit"
     }
   ];
-  client
-    .sendQuickReplies(recipient, replies, text)
-    .catch(err => console.error(err));
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
@@ -157,11 +79,10 @@ function promptStart(client, recipient, text) {
  * 2. Remove item from listings
  * 3. Quit
  *
- * @param {object} client
  * @param {object} recipient
  * @param {array} queue
  */
-function promptSellerListing(client, recipient, listing) {
+function promptSellerListing(recipient, listing) {
   const text = getSellerStatusMessage(listing);
   const replies = [
     {
@@ -180,16 +101,15 @@ function promptSellerListing(client, recipient, listing) {
       payload: "quit"
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
  * Asks the seller if they would like to setup a FAQ for their listing.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function promptSetupFAQ(client, recipient) {
+function promptSetupFAQ(recipient) {
   const text = t.faq.question;
   const replies = [
     {
@@ -203,16 +123,15 @@ function promptSetupFAQ(client, recipient) {
       payload: "skip-faq"
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
  * Asks the seller if they would like to setup a queue for their listing.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function promptSetupQueue(client, recipient) {
+function promptSetupQueue(recipient) {
   const text = t.queue.question;
   const replies = [
     {
@@ -226,19 +145,15 @@ function promptSetupQueue(client, recipient) {
       payload: "skip-queue"
     }
   ];
-  client.sendQuickReplies(recipient, replies, text);
+  send.quickReplies(recipient, replies, text);
 }
 
 module.exports = {
-  addListing,
-  createListing,
-  removeListing,
   displayQueue,
   setupFAQ,
   promptSellerListing,
   promptSetupFAQ,
   promptSetupQueue,
   promptStart,
-  setSellerPrice,
   setQueue
 };

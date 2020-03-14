@@ -4,208 +4,118 @@ const {
   setContext,
   removeContext,
   state
-} = require("../../context");
-const { getListingId, sendText } = require("./helpers");
-const {
-  promptUserCategorization,
-  showInterests,
-  showListings
-} = require("./users/user");
-const {
-  addUserToQueue,
-  notifyBuyerStatus,
-  promptInterestedBuyer,
-  promptInterestedBuyerNoQueue,
-  removeUserFromQueue,
-  formatFAQ
-} = require("./users/buyer");
-const {
-  addListing,
-  createListing,
-  removeListing,
-  displayQueue,
-  setupFAQ,
-  promptSellerListing,
-  promptSetupFAQ,
-  promptSetupQueue,
-  promptStart,
-  setSellerPrice,
-  setQueue
-} = require("./users/seller");
-const {
-  activateRoom,
-  deactivateRoom,
-  getRoom,
-  makeRoom,
-  sendMessage
-} = require("./rooms");
+} = require("../../state/context");
+const { getUserProfile, send } = require("../../client");
+const { getListingId } = require("./helpers");
+const handlers = require("../../state/handlers");
+const user = require("./users/user");
+const buyer = require("./users/buyer");
+const seller = require("./users/seller");
+const listings = require("../../db/listings");
+const rooms = require("./rooms");
 const t = require("../../copy.json");
 
-async function handleText(client, recipient, message) {
+async function handleText(recipient, message) {
   const ctx = getContext(recipient.id);
+  const {
+    data: { to, roomId }
+  } = ctx;
   if (message.text.startsWith("\\")) {
     // Handle commands here
     const command = message.text.substring(1);
     switch (command) {
       case "q":
-      case "quit": {
-        if (!ctx || ctx.state !== "chatting") {
-          return sendText(
-            client,
+      case "quit":
+        if (!ctx || ctx.state !== state.CHATTING) {
+          return send.text(
             recipient,
             "It doesn't look like you're messaging anyone."
           );
         }
-        const {
-          data: { to, roomId }
-        } = ctx;
-        await deactivateRoom(roomId);
-        removeContext(to);
-        removeContext(recipient.id);
-        const { first_name } = await client.getUserProfile(recipient.id, [
-          "first_name"
-        ]);
-        sendText(client, { id: to }, `${first_name} has left the chat.`);
-        return sendText(client, recipient, "Successfully disconnected.");
-      }
+        return rooms
+          .deactivateRoom(roomId)
+          .then(() => {
+            removeContext(to);
+            removeContext(recipient.id);
+            return getUserProfile(recipient, ["first_name"]);
+          })
+          .then(({ first_name }) =>
+            send.text({ id: to }, `${first_name} has left the chat.`)
+          )
+          .then(() => send.text(recipient, "Successfully disconnected."))
+          .catch(err => console.error(err));
       default:
         return;
     }
   }
-  if (ctx && ctx.state === "chatting") {
-    const { to, roomId } = ctx.data;
-    return sendMessage(roomId, recipient.id, to, message.text);
-  }
-  if (ctx && ctx.state === state.FAQ_SETUP) {
-    const { data } = ctx;
-    // if the user is currently setting up their FAQ
-    const answeredQuestions = getContext(recipient.id).data.questions;
-    setContext(recipient.id, state.FAQ_SETUP, {
-      ...getContext(recipient.id).data,
-      questions: answeredQuestions + 1
-    });
 
-    // 1. Price
-    const price = parseInt(message.text);
-    if (isNaN(price)) {
-      return sendText(
-        client,
-        recipient,
-        "Oops, I don't understand that. Please type in a number."
-      );
-    }
-    setSellerPrice(data.listingId, price);
-
-    if (answeredQuestions < t.faq.questions.length) {
-      // if the user hasn't answered all the questions
-      const currentQuestion = t.faq.questions[answeredQuestions];
-      return sendText(client, recipient, currentQuestion);
-    } else {
-      // if the user has answered all the questions
-      setContext(recipient.id, state.FAQ_DONE, {
-        ...getContext(recipient.id).data
-      });
-      return sendText(client, recipient, "Thanks! A FAQ has been set up.");
+  if (ctx) {
+    switch (ctx.state) {
+      case state.CHATTING:
+        handlers.chatting(recipient, message);
+        break;
+      case state.FAQ_SETUP:
+        handlers.faqSetup(recipient, message);
+        break;
+      default:
+        break;
     }
   }
+
   if (message.text === "message seller") {
     const { data } = ctx;
     const { listingId } = data;
     const snapshot = await db.ref(`listings/${listingId}`).once("value");
     const { seller } = snapshot.val();
 
-    let roomId = await getRoom(seller, recipient.id);
+    let roomId = await rooms.getRoom(seller, recipient.id);
     if (!roomId) {
-      roomId = await makeRoom(listingId, [seller, recipient.id]);
+      roomId = await rooms.makeRoom(listingId, [seller, recipient.id]);
     } else {
-      await activateRoom(roomId);
+      await rooms.activateRoom(roomId);
     }
 
-    const { first_name } = await client.getUserProfile(seller, ["first_name"]);
-    return sendText(
-      client,
+    const { first_name } = await getUserProfile(seller, ["first_name"]);
+    setContext(recipient.id, "chatting", { to: seller, roomId });
+    setContext(seller, "chatting", { to: recipient.id, roomId });
+    return send.text(
       recipient,
       `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
-    ).then(() => {
-      setContext(recipient.id, "chatting", { to: seller, roomId });
-      setContext(seller, "chatting", { to: recipient.id, roomId });
-    });
+    );
   }
-  return client.sendText(recipient, message.text);
+  return send.text(recipient, message.text);
 }
 
-function handleDebug(client, recipient, message) {
-  client.sendTemplate(recipient, {
-    template_type: "button",
-    text: "DEBUG",
-    buttons: [
-      {
-        type: "postback",
-        title: "Get started",
-        payload: "get-started"
-      }
-    ]
-  });
-}
-
-function handleAttachments(client, recipient, message) {
-  const { url } = message.attachments[0].payload;
-  const template = {
-    template_type: "generic",
-    elements: [
-      {
-        title: "Is this the right picture?",
-        subtitle: "Tap a button to answer.",
-        image_url: url,
-        buttons: [
-          {
-            type: "postback",
-            title: "Yes!",
-            payload: "yes"
-          },
-          {
-            type: "postback",
-            title: "No!",
-            payload: "no"
-          }
-        ]
-      }
-    ]
-  };
-  client.sendTemplate(recipient, template);
-}
-
-function handleListing(client, recipient, message) {
-  const listings = db.ref("listings");
+function handleListing(recipient, message) {
+  const listingsRef = db.ref("listings");
   const { title } = message.attachments[0].payload;
   const listingId = getListingId(message);
-  listings.child(listingId).once("value", snapshot => {
+  listingsRef.child(listingId).once("value", snapshot => {
     setContext(recipient.id, "", { listingId, title });
     const listing = snapshot.val();
     if (listing) {
-      const { seller, has_queue, queue } = listing;
+      const { seller, has_queue, queue = [] } = listing;
       if (seller !== recipient.id) {
         if (has_queue) {
-          const q = queue || [];
-          if (!q.includes(recipient.id)) {
-            return promptInterestedBuyer(client, recipient, q);
+          if (!queue.includes(recipient.id)) {
+            return buyer.promptInterestedBuyer(recipient, queue);
           }
-          return notifyBuyerStatus(client, recipient, q);
+          return buyer.notifyBuyerStatus(recipient, queue);
         }
         return promptInterestedBuyerNoQueue(client, recipient, listing);
       } else {
         if (has_queue) {
-          return promptSellerListing(client, recipient, listing);
+          return seller.promptSellerListing(recipient, listing);
         }
-        return promptSetupQueue(client, recipient);
+        return seller.promptSetupQueue(recipient);
       }
     }
     setContext(recipient.id, state.CATEGORIZE, { listingId, title });
-    return promptUserCategorization(client, recipient, listingId);
+    return user.promptUserCategorization(recipient);
   });
 }
 
-function handleQuickReply(client, recipient, message) {
+function handleQuickReply(recipient, message) {
   const { payload } = message.quick_reply;
   const { data } = getContext(recipient.id);
   const { listingId, title } = data;
@@ -214,13 +124,14 @@ function handleQuickReply(client, recipient, message) {
 
   listingRef.once("value", async snapshot => {
     const listing = snapshot.val();
+    const { queue = [], faq = [] } = listing;
 
     switch (payload) {
       case "buyer":
-        return sendText(client, recipient, t.buyer.no_share);
+        return send.text(recipient, t.buyer.no_share);
       case "seller":
-        addListing(recipient.id, listingId);
-        createListing(listingId, {
+        listings.addListing(recipient.id, listingId);
+        listings.createListing(listingId, {
           seller: recipient.id,
           has_queue: false,
           queue: [],
@@ -228,54 +139,46 @@ function handleQuickReply(client, recipient, message) {
           price: 0,
           title
         });
-        return promptSetupQueue(client, recipient);
+        return seller.promptSetupQueue(recipient);
       case "setup-faq":
-        return setupFAQ(client, recipient, listingId);
+        return seller.setupFAQ(recipient, listingId);
       case "skip-faq":
-        return promptStart(client, recipient, t.faq.no_faq + t.general.next);
+        return seller.promptStart(recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
-        setQueue(listingId, true);
-        await sendText(
-          client,
-          recipient,
-          "A queue has been sucessfuly set up."
-        );
-        return promptSetupFAQ(client, recipient);
+        seller.setQueue(listingId, true);
+        await send.text(recipient, "A queue has been sucessfuly set up.");
+        return seller.promptSetupFAQ(recipient);
       case "add-queue":
-        return addUserToQueue(client, recipient, listingId);
+        return buyer.addUserToQueue(recipient, listingId);
       case "display-queue":
-        return displayQueue(client, recipient, listing.queue);
+        return seller.displayQueue(recipient, listing.queue);
       case "skip-queue":
-        return promptSetupFAQ(client, recipient);
+        return seller.promptSetupFAQ(recipient);
       case "leave-queue":
-        return removeUserFromQueue(client, recipient, listingId, title);
+        return buyer.removeUserFromQueue(recipient, listingId, title);
       case "remove-listing":
-        removeListing(recipient.id, listingId);
-        return promptStart(client, recipient, t.seller.remove_listing);
+        listings.removeListing(recipient.id, listingId);
+        return seller.promptStart(recipient, t.seller.remove_listing);
       case "show-listings":
-        return showListings(client, recipient);
+        return user.showListings(recipient);
       case "show-interests":
-        return showInterests(client, recipient);
-      case "show-faq": {
-        const { queue = [], faq = [] } = listing;
-        await sendText(client, recipient, formatFAQ(faq));
-        return promptInterestedBuyer(client, recipient, queue);
-      }
+        return user.showInterests(recipient);
+      case "show-faq":
+        await send.text(recipient, buyer.formatFAQ(faq));
+        return buyer.promptInterestedBuyer(recipient, queue);
       case "quit":
         // TODO
-        sendText(client, recipient, "Not implemented.");
+        send.text(recipient, "Not implemented.");
         break;
       default:
         // TODO
-        sendText(client, recipient, "Not implemented.");
+        send.text(recipient, "Not implemented.");
         break;
     }
   });
 }
 
 module.exports = {
-  handleAttachments,
-  handleDebug,
   handleText,
   handleListing,
   handleQuickReply

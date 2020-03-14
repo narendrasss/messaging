@@ -1,5 +1,5 @@
 const { db } = require("../../../db");
-const context = require("../../../context");
+const { send } = require("../../../client");
 const t = require("../../../copy.json");
 
 // AUTOMATED REPLIES
@@ -7,10 +7,9 @@ const t = require("../../../copy.json");
 /**
  * Asks the user if they are the seller or buyer of the given item.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function promptUserCategorization(client, recipient, listingId) {
+function promptUserCategorization(recipient) {
   const text = t.user_categorization.question;
   const replies = [
     {
@@ -24,25 +23,22 @@ function promptUserCategorization(client, recipient, listingId) {
       payload: "buyer"
     }
   ];
-  client
-    .sendQuickReplies(recipient, replies, text)
-    .catch(err => console.error(err));
+  send.quickReplies(recipient, replies, text);
 }
 
 /**
  * Displays the listings that a user is on a queue for.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function showInterests(client, recipient) {
+function showInterests(recipient) {
   const user = db.ref(`users/${recipient.id}`);
   user.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {
       const { listings_buy } = val;
       const template = _constructTemplate(listings_buy, "generic");
-      return client.sendTemplate(recipient, template);
+      return send.template(recipient, template);
     }
   });
 }
@@ -50,30 +46,27 @@ function showInterests(client, recipient) {
 /**
  * Displays the listings that a user has a queue set up for.
  *
- * @param {object} client
  * @param {object} recipient
  */
-function showListings(client, recipient) {
+function showListings(recipient) {
   const user = db.ref(`users/${recipient.id}`);
   user.once("value", snapshot => {
     const val = snapshot.val();
     if (val) {
       const { listings_sale } = val;
       if (!listings_sale) {
-        client.sendText(recipient, "You haven't shared any listings yet.");
+        send.text(recipient, "You haven't shared any listings yet.");
       } else {
-        _constructTemplate(listings_sale, "generic").then(template => {
-          client
-            .sendTemplate(recipient, template)
-            .catch(err => console.error(err));
-        });
+        _constructTemplate(listings_sale, "generic").then(template =>
+          send.template(recipient, template)
+        );
       }
     }
   });
 }
 
 /**
- * Private helper that constructs a template object to be used for client.sendTemplate.
+ * Private helper that constructs a template object to be used for send.template..
  *
  * @param {array} listings
  * @param {string} template_type

@@ -1,5 +1,5 @@
 const { db } = require("../../db");
-const { client } = require("../../client");
+const { send } = require("../../client");
 
 async function makeRoom(listingId, members) {
   const roomsRef = db.ref("rooms");
@@ -29,7 +29,7 @@ async function sendMessage(roomId, from, to, text) {
   };
   const messageRef = await db.ref("messages").push(messageObj);
   db.ref(`rooms/${roomId}/messages/${messageRef.key}`).set(true);
-  client.sendText({ id: to }, text);
+  send.text({ id: to }, text);
 }
 
 async function activateRoom(roomId) {

@@ -1,9 +1,9 @@
 const {
   getQueueMessage,
   getUpdatedQueueMessage,
-  getUpdatedSellerQueueMessage,
-  sendText
+  getUpdatedSellerQueueMessage
 } = require("../helpers");
+const { send } = require("../../../client");
 const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
@@ -26,11 +26,10 @@ function formatFAQ(faq) {
  * 2. See frequently asked questions of item
  * 3. Quit
  *
- * @param {object} client
  * @param {object} recipient
  * @param {array} queue
  */
-function promptInterestedBuyer(client, recipient, queue) {
+function promptInterestedBuyer(recipient, queue) {
   const text = getQueueMessage(recipient.id, queue);
   const replies = [
     {
@@ -49,8 +48,9 @@ function promptInterestedBuyer(client, recipient, queue) {
       payload: "skip-queue"
     }
   ];
-  sendText(client, recipient, text);
-  client.sendQuickReplies(recipient, replies, t.queue.buyer_question);
+  send
+    .text(recipient, text)
+    .then(() => send.quickReplies(recipient, replies, t.queue.buyer_question));
 }
 
 async function promptInterestedBuyerNoQueue(client, recipient, listing) {
@@ -72,8 +72,8 @@ async function promptInterestedBuyerNoQueue(client, recipient, listing) {
   client.sendQuickReplies(recipient, replies, t.general.next);
 }
 
-function notifyBuyerStatus(client, recipient, queue) {
-  sendText(client, recipient, getQueueMessage(recipient.id, queue));
+function notifyBuyerStatus(recipient, queue) {
+  send.text(recipient, getQueueMessage(recipient.id, queue));
   client.sendQuickReplies(
     recipient,
     [
@@ -119,16 +119,8 @@ async function addUserToQueue(client, recipient, listingId) {
   }
 
   await Promise.all(updates);
-  await sendText(
-    client,
-    { id: seller },
-    `Someone joined the queue for ${title}!`
-  );
-  return sendText(
-    client,
-    { id: seller },
-    getUpdatedSellerQueueMessage(queue, title)
-  );
+  await send.text({ id: seller }, `Someone joined the queue for ${title}!`);
+  return send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title));
 }
 
 /**
@@ -136,7 +128,6 @@ async function addUserToQueue(client, recipient, listingId) {
  * notifies all other users in the queue of their updated position.
  * Otherwise, queue remains intact.
  *
- * @param {object} client
  * @param {object} recipient
  * @param {string} listingId
  * @param {string} title
@@ -147,32 +138,28 @@ async function removeUserFromQueue(client, recipient, listingId, title) {
   const { queue = [], seller } = snapshot.val();
   const position = queue.indexOf(recipient.id);
   if (position < 0) {
-    sendText(client, recipient, t.buyer.not_in_queue);
+    send.text(recipient, t.buyer.not_in_queue);
   } else {
     queue.splice(position, 1);
     await listingRef.child("queue").set(queue);
-    sendText(
-      client,
-      { id: seller },
-      "Someone from one of your listings has left the queue."
-    ).then(() =>
-      sendText(
-        client,
+    send
+      .text(
         { id: seller },
-        getUpdatedSellerQueueMessage(queue, title)
+        "Someone from one of your listings has left the queue."
       )
-    );
+      .then(() =>
+        send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title))
+      );
 
-    sendText(client, recipient, t.buyer.remove_queue);
+    send.text(recipient, t.buyer.remove_queue);
     for (const id of queue) {
       const user = { id };
       const text = getUpdatedQueueMessage(id, queue, title);
-      sendText(
-        client,
+      send.text(
         user,
         "Someone from one of the listings you're watching has left the queue."
       );
-      sendText(client, user, text);
+      send.text(user, text);
     }
   }
 }

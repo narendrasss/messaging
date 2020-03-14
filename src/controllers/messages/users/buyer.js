@@ -1,4 +1,8 @@
-const { getQueueMessage, getUpdatedQueueMessage, getUpdatedSellerQueueMessage } = require("../helpers");
+const {
+  getQueueMessage,
+  getUpdatedQueueMessage,
+  getUpdatedSellerQueueMessage
+} = require("../helpers");
 const { send } = require("../../../client");
 const { db } = require("../../../db");
 const t = require("../../../copy.json");
@@ -96,14 +100,8 @@ async function addUserToQueue(client, recipient, listingId) {
   }
 
   await Promise.all(updates);
-  await send.text(
-    { id: seller },
-    `Someone joined the queue for ${title}!`
-  );
-  return send.text(
-    { id: seller },
-    getUpdatedSellerQueueMessage(queue, title)
-  );
+  await send.text({ id: seller }, `Someone joined the queue for ${title}!`);
+  return send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title));
 }
 
 /**
@@ -125,15 +123,14 @@ async function removeUserFromQueue(client, recipient, listingId, title) {
   } else {
     queue.splice(position, 1);
     await listingRef.child("queue").set(queue);
-    send.text(
-      { id: seller },
-      "Someone from one of your listings has left the queue."
-    ).then(() =>
-      send.text(
+    send
+      .text(
         { id: seller },
-        getUpdatedSellerQueueMessage(queue, title)
+        "Someone from one of your listings has left the queue."
       )
-    );
+      .then(() =>
+        send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title))
+      );
 
     send.text(recipient, t.buyer.remove_queue);
     for (const id of queue) {

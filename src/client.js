@@ -38,7 +38,7 @@ async function getUserProfile(recipient, props) {
   try {
     return client.getUserProfile(recipient.id, props);
   } catch (err) {
-    returnconsole.error(err);
+    console.error(err);
   }
 }
 

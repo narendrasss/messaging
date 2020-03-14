@@ -1,5 +1,6 @@
 const handlers = require("./handlers");
 const { getMessageType, messageTypes } = require("./helpers");
+const { send } = require("../../client");
 
 const handlerMap = {
   [messageTypes.TEXT]: handlers.handleText,
@@ -7,7 +8,7 @@ const handlerMap = {
   [messageTypes.QUICK_REPLY]: handlers.handleQuickReply
 };
 
-function messagesController(client) {
+function messagesController() {
   return function handleMessages(event_type, sender_info, webhook_event) {
     const { message } = webhook_event;
     console.log(message);

@@ -9,7 +9,7 @@ const t = require("../../../copy.json");
  *
  * @param {object} recipient
  */
-function promptUserCategorization(recipient, listingId) {
+function promptUserCategorization(recipient) {
   const text = t.user_categorization.question;
   const replies = [
     {

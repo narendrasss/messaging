@@ -4,12 +4,12 @@ const t = require("../copy.json");
 const rooms = require("../controllers/messages/rooms");
 const listings = require("../db/listings");
 
-function chatting(recipient) {
+function chatting(recipient, message) {
   const { to, roomId } = getContext(recipient.id).data;
   return rooms.sendMessage(roomId, recipient.id, to, message.text);
 }
 
-function faqSetup(recipient) {
+function faqSetup(recipient, message) {
   const { data } = getContext(recipient.id);
   // if the user is currently setting up their FAQ
   const answeredQuestions = data.questions;

@@ -17,6 +17,9 @@ const t = require("../../copy.json");
 
 async function handleText(recipient, message) {
   const ctx = getContext(recipient.id);
+  const {
+    data: { to, roomId }
+  } = ctx;
   if (message.text.startsWith("\\")) {
     // Handle commands here
     const command = message.text.substring(1);
@@ -29,15 +32,18 @@ async function handleText(recipient, message) {
             "It doesn't look like you're messaging anyone."
           );
         }
-        const {
-          data: { to, roomId }
-        } = ctx;
-        await rooms.deactivateRoom(roomId);
-        removeContext(to);
-        removeContext(recipient.id);
-        const { first_name } = await getUserProfile(recipient, ["first_name"]);
-        await send.text({ id: to }, `${first_name} has left the chat.`);
-        return send.text(recipient, "Successfully disconnected.");
+        return rooms
+          .deactivateRoom(roomId)
+          .then(() => {
+            removeContext(to);
+            removeContext(recipient.id);
+            return getUserProfile(recipient, ["first_name"]);
+          })
+          .then(({ first_name }) =>
+            send.text({ id: to }, `${first_name} has left the chat.`)
+          )
+          .then(() => send.text(recipient, "Successfully disconnected."))
+          .catch(err => console.error(err));
       default:
         return;
     }
@@ -46,9 +52,13 @@ async function handleText(recipient, message) {
   if (ctx) {
     switch (ctx.state) {
       case state.CHATTING:
-        handlers.chatting(recipient);
+        handlers.chatting(recipient, message);
+        break;
       case state.FAQ_SETUP:
-        handlers.faqSetup(recipient);
+        handlers.faqSetup(recipient, message);
+        break;
+      default:
+        break;
     }
   }
 
@@ -101,7 +111,7 @@ function handleListing(recipient, message) {
       }
     }
     setContext(recipient.id, state.CATEGORIZE, { listingId, title });
-    return user.promptUserCategorization(recipient, listingId);
+    return user.promptUserCategorization(recipient);
   });
 }
 
@@ -114,6 +124,7 @@ function handleQuickReply(recipient, message) {
 
   listingRef.once("value", async snapshot => {
     const listing = snapshot.val();
+    const { queue = [], faq = [] } = listing;
 
     switch (payload) {
       case "buyer":
@@ -153,8 +164,7 @@ function handleQuickReply(recipient, message) {
       case "show-interests":
         return user.showInterests(recipient);
       case "show-faq":
-        const { queue = [], faq = [] } = listing;
-        await send.text(recipient, formatFAQ(faq));
+        await send.text(recipient, buyer.formatFAQ(faq));
         return buyer.promptInterestedBuyer(recipient, queue);
       case "quit":
         // TODO

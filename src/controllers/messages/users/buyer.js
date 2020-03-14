@@ -1,6 +1,7 @@
 const {
   getQueueMessage,
   getUpdatedQueueMessage,
+  getUpdatedSellerQueueMessage,
   sendText
 } = require("../helpers");
 const { db } = require("../../../db");
@@ -77,35 +78,38 @@ function notifyBuyerStatus(client, recipient, queue) {
   );
 }
 
-function addUserToQueue(client, recipient, listingId) {
-  const queue = db.ref(`listings/${listingId}/queue`);
-  const interests = db.ref(`users/${recipient.id}/listings_buy`);
-  interests.once("value", snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      if (!val.includes(listingId)) {
-        val.push(listingId);
-        interests.set(val);
-      }
-    } else {
-      interests.set([listingId]);
-    }
-  });
-  queue.once("value", async snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      if (!val.includes(recipient.id)) {
-        val.push(recipient.id);
-        queue.set(val);
-      } else {
-        const message = getQueueMessage(recipient.id, val);
-        await sendText(client, recipient, message);
-      }
-    } else {
-      queue.set([recipient.id]);
-    }
-    sendText(client, recipient, t.buyer.success_add_queue);
-  });
+async function addUserToQueue(client, recipient, listingId) {
+  const listingRef = db.ref(`listings/${listingId}`);
+  const snapshot = await listingRef.once("value");
+  const {
+    queue = [],
+    listings_buy: interests = [],
+    seller,
+    title
+  } = snapshot.val();
+
+  const updates = [];
+  if (!queue.includes(recipient.id)) {
+    queue.push(recipient.id);
+    updates.push(listingRef.child("queue").set(queue));
+  }
+
+  if (!interests.includes(listingId)) {
+    interests.push(listingId);
+    updates.push(listingRef.child("listings_buy").set(interests));
+  }
+
+  await Promise.all(updates);
+  await sendText(
+    client,
+    { id: seller },
+    `Someone joined the queue for ${title}!`
+  );
+  return sendText(
+    client,
+    { id: seller },
+    getUpdatedSellerQueueMessage(queue, title)
+  );
 }
 
 /**
@@ -118,33 +122,40 @@ function addUserToQueue(client, recipient, listingId) {
  * @param {string} listingId
  * @param {string} title
  */
-function removeUserFromQueue(client, recipient, listingId, title) {
+async function removeUserFromQueue(client, recipient, listingId, title) {
   const listingRef = db.ref(`listings/${listingId}`);
-  listingRef.once("value", snapshot => {
-    const listing = snapshot.val();
-    const { queue } = listing;
-    if (queue) {
-      const position = queue.indexOf(recipient.id);
-      if (position < 0) {
-        sendText(client, recipient, t.buyer.not_in_queue);
-      } else {
-        queue.splice(position, 1);
-        listingRef.child("queue").set(queue);
-        sendText(client, recipient, t.buyer.remove_queue);
+  const snapshot = await listingRef.once("value");
+  const { queue = [], seller } = snapshot.val();
+  const position = queue.indexOf(recipient.id);
+  if (position < 0) {
+    sendText(client, recipient, t.buyer.not_in_queue);
+  } else {
+    queue.splice(position, 1);
+    await listingRef.child("queue").set(queue);
+    sendText(
+      client,
+      { id: seller },
+      "Someone from one of your listings has left the queue."
+    ).then(() =>
+      sendText(
+        client,
+        { id: seller },
+        getUpdatedSellerQueueMessage(queue, title)
+      )
+    );
 
-        for (const id of queue) {
-          const user = { id };
-          const text = getUpdatedQueueMessage(id, queue, title);
-          sendText(
-            client,
-            user,
-            "Someone from one of the listings you're watching has left the queue."
-          );
-          sendText(client, user, text);
-        }
-      }
+    sendText(client, recipient, t.buyer.remove_queue);
+    for (const id of queue) {
+      const user = { id };
+      const text = getUpdatedQueueMessage(id, queue, title);
+      sendText(
+        client,
+        user,
+        "Someone from one of the listings you're watching has left the queue."
+      );
+      sendText(client, user, text);
     }
-  });
+  }
 }
 
 module.exports = {

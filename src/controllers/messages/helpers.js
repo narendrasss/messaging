@@ -75,11 +75,21 @@ function getSellerStatusMessage(listing) {
   );
 }
 
+function getUpdatedSellerQueueMessage(queue = [], title) {
+  const length = queue.length;
+  return length === 0
+    ? `There's now no one waiting for ${title}.`
+    : `There ${length === 1 ? "is" : "are"} now ${queue.length} ${
+        length === 1 ? "person" : "people"
+      } waiting for ${title}.`;
+}
+
 module.exports = {
   getMessageType,
   getListingId,
   getQueueMessage,
   getUpdatedQueueMessage,
   getSellerStatusMessage,
+  getUpdatedSellerQueueMessage,
   messageTypes
 };

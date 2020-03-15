@@ -114,6 +114,8 @@ function handleQuickReply(recipient, message) {
         return seller.promptSetupFAQ(recipient);
       case "leave-queue":
         return buyer.removeUserFromQueue(recipient, listingId, title);
+      case "message-seller":
+        return handleText(recipient, { message: { text: "\\message seller" } });
       case "remove-listing":
         listings.removeListing(recipient.id, listingId);
         return seller.promptStart(recipient, t.seller.remove_listing);
@@ -124,7 +126,10 @@ function handleQuickReply(recipient, message) {
       case "show-faq": {
         const { queue = [], faq = [] } = listing;
         await send.text(recipient, buyer.formatFAQ(faq));
-        return buyer.promptInterestedBuyer(recipient, queue);
+        if (!queue.includes(recipient.id)) {
+          return buyer.promptInterestedBuyer(recipient, queue);
+        }
+        return buyer.notifyBuyerStatus(recipient, queue);
       }
       case "quit":
         // TODO

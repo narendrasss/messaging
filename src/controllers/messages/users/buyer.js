@@ -34,11 +34,15 @@ async function promptNextAction(recipient, listingId) {
  * @param {array} faq
  */
 function formatFAQ(faq) {
-  let formattedMessage = "";
-  for (const { question, answer } of faq) {
-    formattedMessage += `Question: ${question}\n` + `Answer: ${answer}\n\n`;
+  if (faq.length > 0) {
+    let formattedMessage = "";
+    for (const { question, answer } of faq) {
+      formattedMessage += `Question: ${question}\n` + `Answer: ${answer}\n\n`;
+    }
+    return formattedMessage.substring(0, -2);
+  } else {
+    return t.buyer.no_faq;
   }
-  return formattedMessage.substring(0, -2);
 }
 
 /**
@@ -51,7 +55,8 @@ function formatFAQ(faq) {
  * @param {array} queue
  */
 function promptInterestedBuyer(recipient, queue) {
-  const text = getQueueMessage(recipient.id, queue);
+  const queueMessage = getQueueMessage(recipient.id, queue);
+  const text = `${queueMessage} ${t.queue.buyer_question}`;
   const replies = [
     {
       content_type: "text",
@@ -69,9 +74,7 @@ function promptInterestedBuyer(recipient, queue) {
       payload: "skip-queue"
     }
   ];
-  send
-    .text(recipient, text)
-    .then(() => send.quickReplies(recipient, replies, t.queue.buyer_question));
+  return send.quickReplies(recipient, replies, text);
 }
 
 async function promptInterestedBuyerNoQueue(recipient, listingId) {

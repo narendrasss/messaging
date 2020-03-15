@@ -1,7 +1,7 @@
 const { db } = require("../../../db");
-const { removeContext, setContext, state } = require("../../state/context");
-const { getUserProfile, send } = require("../../client");
-const rooms = require("./rooms");
+const { removeContext, setContext, state } = require("../../../state/context");
+const { getUserProfile, send } = require("../../../client");
+const rooms = require("../rooms");
 
 async function handleMessageSeller(ctx, recipient) {
   const { data } = ctx;

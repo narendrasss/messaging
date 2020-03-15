@@ -1,5 +1,6 @@
 const { db } = require("../../db");
 const { send } = require("../../client");
+const listings = require("../../db/listings");
 const t = require("../../copy.json");
 
 async function makeRoom(listingId, members) {

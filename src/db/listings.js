@@ -74,6 +74,16 @@ function createListing(listingId, listing) {
   });
 }
 
+async function removeUserFromQueue(listingId, userId) {
+  const snapshot = await db.ref(`listings/${listingId}/queue`).once("value");
+  const queue = snapshot.val();
+  if (queue) {
+    const pos = queue.indexOf(userId);
+    queue.splice(pos, 1);
+    await snapshot.ref.set(queue);
+  }
+}
+
 /**
  * Sets the price on a listing
  *
@@ -96,7 +106,9 @@ async function createQueue(listingId) {
       if (!prevMessaged[listingId] || prevMessaged[listingId] !== firstInLine) {
         const user = { id: firstInLine };
         prevMessaged[listingId] = firstInLine;
-        const DELAY = 1000 * 10;
+
+        // set to 30 secs for now
+        const DELAY = 1000 * 30;
         await send
           .text(
             user,
@@ -117,14 +129,14 @@ async function createQueue(listingId) {
               ),
             DELAY / 2
           ),
-          dangerTimeout: setTimeout(
-            () =>
+          dangerTimeout: setTimeout(() => {
+            removeUserFromQueue(listingId, firstInLine).then(() =>
               send.text(
                 user,
                 `Since it's been 48 hours, you've been kicked out of the queue.`
-              ),
-            DELAY
-          )
+              )
+            );
+          }, DELAY)
         });
       }
     }
@@ -136,5 +148,6 @@ module.exports = {
   removeListing,
   createListing,
   setSellerPrice,
+  removeUserFromQueue,
   createQueue
 };

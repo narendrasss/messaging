@@ -12,6 +12,12 @@
     "show_faq": "See FAQ",
     "leave_queue": "Leave queue"
   },
+  "chat": {
+    "buyer_warning": "You haven't replied in 24 hours! Reply within the next 24 hours to keep your position in line.",
+    "buyer_danger": "It's been 48 hours since the seller messaged you! Unfortunately, this means you will get kicked out of the queue.",
+    "seller_warning": "You haven't replied in 24 hours! Be sure to reply soon!",
+    "seller_danger": "It's been 48 hours since the buyer messaged you! Be sure to reply soon!"
+  },
   "faq": {
     "question": "Would you like to setup a FAQ?",
     "setup": "Yes, please.",

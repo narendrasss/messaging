@@ -5,8 +5,8 @@ const rooms = require("../controllers/messages/rooms");
 const listings = require("../db/listings");
 
 function chatting(recipient, message) {
-  const { to, roomId } = getContext(recipient.id).data;
-  return rooms.sendMessage(roomId, recipient.id, to, message.text);
+  const { listingId, to, roomId } = getContext(recipient.id).data;
+  return rooms.sendMessage(listingId, roomId, recipient.id, to, message.text);
 }
 
 function faqSetup(recipient, message) {

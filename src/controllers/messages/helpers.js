@@ -58,10 +58,10 @@ function getUpdatedQueueMessage(id, queue, item) {
   if (index < 0) {
     return `There ${length == 1 ? "is" : "are"} currently ${length} ${
       length == 1 ? "person" : "people"
-    } waiting for ${item}`;
+    } waiting for ${item}.`;
   }
   if (index === 0) {
-    return `You're first in line for ${item}`;
+    return `You're first in line for ${item}!`;
   }
   return `You are in position ${index} out of ${length} for ${item}`;
 }

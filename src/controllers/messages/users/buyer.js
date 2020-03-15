@@ -5,6 +5,7 @@ const {
 } = require("../helpers");
 const { send } = require("../../../client");
 const { db } = require("../../../db");
+const { setContext } = require("../../../state/context");
 const t = require("../../../copy.json");
 
 /**
@@ -164,9 +165,39 @@ async function removeUserFromQueue(recipient, listingId, title) {
   }
 }
 
+function initializeQueueHandler(listingId) {
+  const queueRef = db.ref(`listings/${listingId}/queue`);
+  queueRef.on("value", async snapshot => {
+    const queue = snapshot.val();
+    if (queue) {
+      const firstInLine = queue[0];
+      const replies = [
+        {
+          content_type: "text",
+          title: "Yes",
+          payload: "accept-seller-offer"
+        },
+        {
+          content_type: "text",
+          title: "No",
+          payload: "decline-seller-offer"
+        }
+      ];
+      setContext(firstInLine, "accept-price", { listingId });
+      await send.text(firstInLine, "You're now first in line!");
+      send.quickReplies(
+        firstInLine,
+        replies,
+        "Are you happy with the listing's price?"
+      );
+    }
+  });
+}
+
 module.exports = {
   addUserToQueue,
   formatFAQ,
+  initializeQueueHandler,
   notifyBuyerStatus,
   promptInterestedBuyer,
   promptInterestedBuyerNoQueue,

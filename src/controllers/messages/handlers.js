@@ -1,6 +1,6 @@
 const { db } = require("../../db");
 const { getContext, setContext, state } = require("../../state/context");
-const { send } = require("../../client");
+const { send, getUserProfile } = require("../../client");
 const { getListingId } = require("./helpers");
 const commandHandlers = require("./commands/handlers");
 const stateHandlers = require("../../state/handlers");
@@ -103,7 +103,8 @@ function handleQuickReply(recipient, message) {
       case "skip-faq":
         return seller.promptStart(recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
-        listings.setQueue(listingId, true);
+        listings.createQueue(listingId);
+        buyer.initializeQueueHandler(listingId);
         await send.text(recipient, "A queue has been sucessfuly set up.");
         return seller.promptSetupFAQ(recipient);
       case "add-queue":
@@ -126,6 +127,19 @@ function handleQuickReply(recipient, message) {
         await send.text(recipient, buyer.formatFAQ(faq));
         return buyer.promptInterestedBuyer(recipient, queue);
       }
+      case "accept-seller-offer":
+        send.text(
+          recipient,
+          "Great! We've notified the seller on your acceptance."
+        );
+        return getUserProfile(recipient, ["first_name"]).then(
+          ({ first_name }) =>
+            // TODO: Remove this later when the availability function is set up.
+            send.text(
+              listing.seller,
+              `Good news! ${first_name} has agreed to buy ${listing.item} for your asking price.`
+            )
+        );
       case "quit":
         // TODO
         send.text(recipient, "Not implemented.");

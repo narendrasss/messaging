@@ -38,8 +38,8 @@
     "see_queue": "Display queue."
   },
   "start": {
-    "show_interested": "Show your interests.",
-    "show_listings": "Show your listings.",
+    "show_interested": "Show interests.",
+    "show_listings": "Show listings.",
     "quit": "Quit"
   },
   "user_categorization": {

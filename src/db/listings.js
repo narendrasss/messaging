@@ -1,5 +1,7 @@
 const { db } = require(".");
 const { send } = require("../client");
+const { setContext } = require("../state/context");
+const t = require("../copy.json");
 
 const prevMessaged = {};
 
@@ -87,14 +89,15 @@ async function createQueue(listingId) {
   listingSnapshot.child("has_queue").ref.set(true);
 
   const queueRef = listingSnapshot.child("queue").ref;
-  queueRef.on("value", snapshot => {
+  queueRef.on("value", async snapshot => {
     const queue = snapshot.val();
     if (queue) {
       const firstInLine = queue[0];
       if (!prevMessaged[listingId] || prevMessaged[listingId] !== firstInLine) {
         const user = { id: firstInLine };
         prevMessaged[listingId] = firstInLine;
-        send
+        const DELAY = 1000 * 10;
+        await send
           .text(
             user,
             `You're now first in line for ${listingSnapshot.val().title}!`
@@ -105,6 +108,24 @@ async function createQueue(listingId) {
               "Please make sure to message the seller within the next 48 hours to keep your place in line. You can do that any time by typing in '\\message seller'."
             )
           );
+        setContext(firstInLine, "wait-message-seller", {
+          warningTimeout: setTimeout(
+            () =>
+              send.text(
+                user,
+                `${t.chat.general_warning} Message the seller soon with '\\message seller' or risk your place in line.`
+              ),
+            DELAY / 2
+          ),
+          dangerTimeout: setTimeout(
+            () =>
+              send.text(
+                user,
+                `Since it's been 48 hours, you've been kicked out of the queue.`
+              ),
+            DELAY
+          )
+        });
       }
     }
   });

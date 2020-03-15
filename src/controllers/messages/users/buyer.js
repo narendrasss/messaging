@@ -53,6 +53,25 @@ function promptInterestedBuyer(recipient, queue) {
     .then(() => send.quickReplies(recipient, replies, t.queue.buyer_question));
 }
 
+async function promptInterestedBuyerNoQueue(recipient, listing) {
+  const replies = [
+    {
+      content_type: "text",
+      title: "Message seller",
+      payload: "message-seller"
+    }
+  ];
+  if (listing.faq) {
+    replies.push({
+      content_type: "text",
+      title: t.buyer.show_faq,
+      payload: "show-faq"
+    });
+  }
+  await send.text(recipient, t.buyer.no_queue);
+  send.quickReplies(recipient, replies, t.general.next);
+}
+
 function notifyBuyerStatus(recipient, queue) {
   send.text(recipient, getQueueMessage(recipient.id, queue));
   send.quickReplies(
@@ -150,5 +169,6 @@ module.exports = {
   formatFAQ,
   notifyBuyerStatus,
   promptInterestedBuyer,
+  promptInterestedBuyerNoQueue,
   removeUserFromQueue
 };

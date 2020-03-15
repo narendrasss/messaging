@@ -12,7 +12,6 @@ const t = require("../../copy.json");
 
 async function handleText(recipient, message) {
   const ctx = getContext(recipient.id);
-
   if (message.text.startsWith("\\")) {
     // Handle commands here
     const command = message.text.substring(1).toLowerCase();
@@ -57,7 +56,7 @@ function handleListing(recipient, message) {
           }
           return buyer.notifyBuyerStatus(recipient, queue);
         }
-        return send.text(recipient, t.buyer.no_queue);
+        return buyer.promptInterestedBuyerNoQueue(recipient, listing);
       } else {
         if (has_queue) {
           return seller.promptSellerListing(recipient, listing);
@@ -83,7 +82,7 @@ function handleQuickReply(recipient, message) {
 
     switch (payload) {
       case "buyer":
-        return send.text(recipient, t.buyer.no_queue);
+        return send.text(recipient, t.buyer.no_share);
       case "seller":
         listings.addListing(recipient.id, listingId);
         listings.createListing(listingId, {

@@ -136,10 +136,14 @@ function handleQuickReply(recipient, message) {
           ({ first_name }) =>
             // TODO: Remove this later when the availability function is set up.
             send.text(
-              listing.seller,
+              { id: listing.seller },
               `Good news! ${first_name} has agreed to buy ${listing.item} for your asking price.`
             )
         );
+      case "decline-seller-offer":
+        // TODO: Begin offer cycle
+        send.text(recipient, "Not implemented.");
+        break;
       case "quit":
         // TODO
         send.text(recipient, "Not implemented.");

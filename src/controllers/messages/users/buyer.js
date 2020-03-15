@@ -169,6 +169,7 @@ function initializeQueueHandler(listingId) {
   const queueRef = db.ref(`listings/${listingId}/queue`);
   queueRef.on("value", async snapshot => {
     const queue = snapshot.val();
+    console.log(queue);
     if (queue) {
       const firstInLine = queue[0];
       const replies = [
@@ -184,9 +185,9 @@ function initializeQueueHandler(listingId) {
         }
       ];
       setContext(firstInLine, "accept-price", { listingId });
-      await send.text(firstInLine, "You're now first in line!");
+      await send.text({ id: firstInLine }, "You're now first in line!");
       send.quickReplies(
-        firstInLine,
+        { id: firstInLine },
         replies,
         "Are you happy with the listing's price?"
       );

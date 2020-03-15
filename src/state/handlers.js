@@ -2,6 +2,7 @@ const { getContext, setContext, state } = require("../state/context");
 const { send } = require("../client");
 const t = require("../copy.json");
 const rooms = require("../controllers/messages/rooms");
+const seller = require("../controllers/messages/users/seller");
 const listings = require("../db/listings");
 
 function chatting(recipient, message) {
@@ -34,10 +35,8 @@ function faqSetup(recipient, message) {
     return send.text(recipient, currentQuestion);
   } else {
     // if the user has answered all the questions
-    setContext(recipient.id, state.FAQ_DONE, {
-      ...data
-    });
-    return send.text(recipient, "Thanks! A FAQ has been set up.");
+    setContext(recipient.id, state.FAQ_DONE, { ...data });
+    return seller.promptStart(recipient, `${t.faq.finish} ${t.general.next}`);
   }
 }
 

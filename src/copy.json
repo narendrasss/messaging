@@ -14,6 +14,7 @@
   },
   "faq": {
     "question": "Would you like to setup a FAQ?",
+    "finish": "Thanks! A FAQ has been set up.",
     "setup": "Yes, please.",
     "skip": "Not right now.",
     "no_faq": "You can set up a faq any time in the future by sharing the post again.",

@@ -31,15 +31,15 @@
     "setup": "Yes, setup a queue!"
   },
   "seller": {
-    "item_sold": "Remove item from listings.",
+    "item_sold": "Remove listing.",
     "own_listing": "This is one of your listings!",
     "remove_listing": "This item was successfully removed from your listings. What would you like to do next?",
     "quit": "Quit",
-    "see_queue": "Display users in the queue."
+    "see_queue": "Display queue."
   },
   "start": {
-    "show_interested": "Show all items you're interested in",
-    "show_listings": "Show all your listings",
+    "show_interested": "Show your interests.",
+    "show_listings": "Show your listings.",
     "quit": "Quit"
   },
   "user_categorization": {

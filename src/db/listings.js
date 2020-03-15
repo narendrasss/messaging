@@ -1,4 +1,7 @@
 const { db } = require(".");
+const { send } = require("../client");
+
+const prevMessaged = {};
 
 /**
  * Adds listingId to array of listings associated with seller given by userId
@@ -79,8 +82,32 @@ function setSellerPrice(listingId, price) {
   return db.ref(`listings/${listingId}/price`).set(price);
 }
 
-function setQueue(listingId, hasQueue) {
-  return db.ref(`listings/${listingId}/has_queue`).set(hasQueue);
+async function createQueue(listingId) {
+  const listingSnapshot = await db.ref(`listings/${listingId}`).once("value");
+  listingSnapshot.child("has_queue").ref.set(true);
+
+  const queueRef = listingSnapshot.child("queue").ref;
+  queueRef.on("value", snapshot => {
+    const queue = snapshot.val();
+    if (queue) {
+      const firstInLine = queue[0];
+      if (!prevMessaged[listingId] || prevMessaged[listingId] !== firstInLine) {
+        const user = { id: firstInLine };
+        prevMessaged[listingId] = firstInLine;
+        send
+          .text(
+            user,
+            `You're now first in line for ${listingSnapshot.val().title}!`
+          )
+          .then(() =>
+            send.text(
+              user,
+              "Please make sure to message the seller within the next 48 hours to keep your place in line. You can do that any time by typing in '\\message seller'."
+            )
+          );
+      }
+    }
+  });
 }
 
 module.exports = {
@@ -88,5 +115,5 @@ module.exports = {
   removeListing,
   createListing,
   setSellerPrice,
-  setQueue
+  createQueue
 };

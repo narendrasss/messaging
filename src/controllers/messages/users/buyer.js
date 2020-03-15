@@ -148,27 +148,34 @@ async function removeUserFromQueue(recipient, listingId, title) {
   if (position < 0) {
     send.text(recipient, t.buyer.not_in_queue);
   } else {
-    queue.splice(position, 1);
-    await listingRef.child("queue").set(queue);
-    send
-      .text(
-        { id: seller },
-        "Someone from one of your listings has left the queue."
-      )
-      .then(() =>
-        send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title))
-      );
+    const updates = [];
+    updates.push(
+      send
+        .text(
+          { id: seller },
+          "Someone from one of your listings has left the queue."
+        )
+        .then(() =>
+          send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title))
+        )
+    );
 
-    send.text(recipient, t.buyer.remove_queue);
+    updates.push(send.text(recipient, t.buyer.remove_queue));
     for (const id of queue) {
       const user = { id };
       const text = getUpdatedQueueMessage(id, queue, title);
-      send.text(
-        user,
-        "Someone from one of the listings you're watching has left the queue."
+      updates.push(
+        send
+          .text(
+            user,
+            "Someone from one of the listings you're watching has left the queue."
+          )
+          .then(() => send.text(user, text))
       );
-      send.text(user, text);
     }
+    await Promise.all(updates);
+    queue.splice(position, 1);
+    listingRef.child("queue").set(queue);
   }
 }
 

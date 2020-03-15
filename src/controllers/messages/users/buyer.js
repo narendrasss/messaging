@@ -132,7 +132,7 @@ async function addUserToQueue(recipient, listingId) {
  * @param {string} listingId
  * @param {string} title
  */
-async function removeUserFromQueue(client, recipient, listingId, title) {
+async function removeUserFromQueue(recipient, listingId, title) {
   const listingRef = db.ref(`listings/${listingId}`);
   const snapshot = await listingRef.once("value");
   const { queue = [], seller } = snapshot.val();

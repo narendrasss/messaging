@@ -41,7 +41,7 @@ function faqSetup(recipient, message) {
   }
 }
 
-async function offer(recipient, message, listing) {
+async function offerSeller(recipient, message, listing) {
   const price = parseInt(message.text);
   if (isNaN(price)) {
     return send.text(
@@ -83,4 +83,35 @@ async function offer(recipient, message, listing) {
   return send.text(recipient, "Thanks, I've notified the seller.");
 }
 
-module.exports = { chatting, faqSetup, offer };
+async function offerBuyer(recipient, message, data) {
+  const price = parseInt(message.text);
+  if (isNaN(price)) {
+    return send.text(
+      recipient,
+      "Oops, I don't understand that. Please type in a number."
+    );
+  }
+  const { listing, buyer } = data;
+  const { title } = listing;
+  setContext(recipient.id, state.WAIT, listing);
+  setContext(buyer, "offer", listing);
+  await send.quickReplies(
+    { id: buyer },
+    [
+      {
+        content_type: "text",
+        title: "Accept offer",
+        payload: "accept-seller-offer"
+      },
+      {
+        content_type: "text",
+        title: "Decline offer",
+        payload: "decline-seller-offer"
+      }
+    ],
+    `The seller of ${title} offered ${price}.`
+  );
+  return send.text(recipient, "Thanks, I've send the buyer the offer.");
+}
+
+module.exports = { chatting, faqSetup, offerSeller, offerBuyer };

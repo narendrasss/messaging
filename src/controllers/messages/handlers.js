@@ -33,7 +33,9 @@ async function handleText(recipient, message) {
       case state.FAQ_SETUP:
         return stateHandlers.faqSetup(recipient, message);
       case state.BUYER_SETUP_OFFER:
-        return stateHandlers.offer(recipient, message, ctx.data);
+        return stateHandlers.offerSeller(recipient, message, ctx.data);
+      case state.SELLER_SETUP_OFFER:
+        return stateHandlers.offerBuyer(recipient, message, ctx.data);
       default:
         return;
     }
@@ -152,7 +154,10 @@ function handleQuickReply(recipient, message) {
         );
       }
       case "counter-buyer-offer":
-        setContext(recipient.id, state.SELLER_SETUP_OFFER, listing);
+        setContext(recipient.id, state.SELLER_SETUP_OFFER, {
+          ...data,
+          listing
+        });
         return send.text(recipient, "How much would you like to offer?");
       case "decline-buyer-offer": {
         const { buyer: buyerId } = data;
@@ -163,7 +168,7 @@ function handleQuickReply(recipient, message) {
         );
         send.text(
           { id: buyerId },
-          `You've been removed from the queue for ${listing.title}`
+          `You've been removed from the queue for ${listing.title}.`
         );
         return send.text(
           recipient,

@@ -32,6 +32,8 @@ async function handleText(recipient, message) {
         return stateHandlers.chatting(recipient, message);
       case state.FAQ_SETUP:
         return stateHandlers.faqSetup(recipient, message);
+      case state.BUYER_SETUP_OFFER:
+        return stateHandlers.offer(recipient, message, ctx.data);
       default:
         return;
     }
@@ -127,6 +129,18 @@ function handleQuickReply(recipient, message) {
         await send.text(recipient, buyer.formatFAQ(faq));
         return buyer.promptInterestedBuyer(recipient, queue);
       }
+      case "accept-buyer-offer":
+        // TODO
+        send.text(recipient, "Not implemented.");
+        break;
+      case "counter-buyer-offer":
+        // TODO
+        send.text(recipient, "Not implemented.");
+        break;
+      case "decline-buyer-offer":
+        // TODO
+        send.text(recipient, "Not implemented.");
+        break;
       case "accept-seller-offer":
         send.text(
           recipient,
@@ -141,9 +155,11 @@ function handleQuickReply(recipient, message) {
             )
         );
       case "decline-seller-offer":
-        // TODO: Begin offer cycle
-        send.text(recipient, "Not implemented.");
-        break;
+        setContext(recipient, state.BUYER_SETUP_OFFER, listing);
+        return send.text(
+          recipient,
+          "No worries. What would you like to offer the seller?"
+        );
       case "quit":
         // TODO
         send.text(recipient, "Not implemented.");

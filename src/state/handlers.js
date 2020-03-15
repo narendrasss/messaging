@@ -1,5 +1,5 @@
 const { getContext, setContext, state } = require("../state/context");
-const { send } = require("../client");
+const { send, getUserProfile } = require("../client");
 const t = require("../copy.json");
 const rooms = require("../controllers/messages/rooms");
 const listings = require("../db/listings");
@@ -41,4 +41,45 @@ function faqSetup(recipient, message) {
   }
 }
 
-module.exports = { chatting, faqSetup };
+async function offer(recipient, message, listing) {
+  const price = parseInt(message.text);
+  if (isNaN(price)) {
+    return send.text(
+      recipient,
+      "Oops, I don't understand that. Please type in a number."
+    );
+  }
+
+  const { first_name } = await getUserProfile(recipient, ["first_name"]);
+  const { seller, title } = listing;
+  setContext(recipient.id, state.WAIT, listing);
+  await send.quickReplies(
+    { id: seller },
+    [
+      {
+        content_type: "text",
+        title: "Accept offer",
+        payload: "accept-buyer-offer"
+      },
+      {
+        content_type: "text",
+        title: "Counter offer",
+        payload: "counter-buyer-offer"
+      },
+      {
+        content_type: "text",
+        title: "Decline offer",
+        payload: "decline-buyer-offer"
+      },
+      {
+        content_type: "text",
+        title: "Put on hold",
+        payload: "hold"
+      }
+    ],
+    `${first_name} offered ${price} for your item, ${title}.`
+  );
+  return send.text(recipient, "Thanks, I've notified the seller.");
+}
+
+module.exports = { chatting, faqSetup, offer };

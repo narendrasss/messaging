@@ -22,7 +22,8 @@ async function handleText(recipient, message) {
       case "message seller":
         return commandHandlers.handleMessageSeller(ctx, message);
       default:
-        return;
+        // TODO
+        return send.text(recipient, "Not implemented.");
     }
   }
 
@@ -33,11 +34,12 @@ async function handleText(recipient, message) {
       case state.FAQ_SETUP:
         return stateHandlers.faqSetup(recipient, message);
       default:
-        return;
+        // TODO
+        return send.text(recipient, "Not implemented.");
     }
   }
 
-  return send.text(recipient, message.text);
+  return send.text(recipient, "Not implemented.");
 }
 
 function handleListing(recipient, message) {
@@ -104,7 +106,7 @@ function handleQuickReply(recipient, message) {
         return seller.promptStart(recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
         listings.createQueue(listingId);
-        await send.text(recipient, "A queue has been sucessfuly set up.");
+        await send.text(recipient, "A queue has been successfully set up.");
         return seller.promptSetupFAQ(recipient);
       case "add-queue":
         return buyer.addUserToQueue(recipient, listingId);
@@ -132,13 +134,10 @@ function handleQuickReply(recipient, message) {
         return buyer.notifyBuyerStatus(recipient, queue);
       }
       case "quit":
-        // TODO
-        send.text(recipient, "Not implemented.");
-        break;
+        setContext(recipient.id, state.DONE, { ...data });
+        return send.text(recipient, t.general.done);
       default:
-        // TODO
-        send.text(recipient, "Not implemented.");
-        break;
+        return send.text(recipient, "Not supported.");
     }
   });
 }

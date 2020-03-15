@@ -3,8 +3,8 @@
     "no_share": "The seller has yet to share this listing to me. Please message them directly.",
     "no_queue": "The seller has not yet set up a queue for this item.",
     "success_add_queue": "Great! You've been added to the queue.",
-    "add_queue": "Yes, please.",
-    "dont_add_queue": "No thanks!",
+    "add_queue": "Yes, please",
+    "dont_add_queue": "No thanks",
     "quit": "Quit",
     "no_faq": "The seller has not yet set up a FAQ. Please contact the seller directly.",
     "not_in_queue": "You are not presently in the queue.",
@@ -23,32 +23,33 @@
   "faq": {
     "question": "Would you like to setup a FAQ?",
     "finish": "Thanks! A FAQ has been set up.",
-    "setup": "Yes, please.",
-    "skip": "Not right now.",
+    "setup": "Yes, please",
+    "skip": "Not right now",
     "no_faq": "You can set up a faq any time in the future by sharing the post again.",
     "questions": ["How much does it cost?"]
   },
   "general": {
+    "done": "You can start another conversation in the future by sharing a listing. Have a great day!",
     "next": "What would you like to do next?"
   },
   "queue": {
     "did_add": "A queue has been set up! What would you like to do next?",
     "did_not_add": "You can set up a queue any time in the future by sharing the post again.",
-    "no_setup": "No thanks.",
+    "no_setup": "No thanks",
     "question": "Would you like to set up a queue for this item?",
     "buyer_question": "Would you like to be added to the queue?",
     "setup": "Yes, setup a queue!"
   },
   "seller": {
-    "item_sold": "Remove listing.",
+    "item_sold": "Remove listing",
     "own_listing": "This is one of your listings!",
     "remove_listing": "This item was successfully removed from your listings. What would you like to do next?",
     "quit": "Quit",
-    "see_queue": "Display queue."
+    "see_queue": "Display queue"
   },
   "start": {
-    "show_interested": "Show interests.",
-    "show_listings": "Show listings.",
+    "show_interested": "Show interests",
+    "show_listings": "Show listings",
     "quit": "Quit"
   },
   "user_categorization": {

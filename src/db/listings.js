@@ -79,8 +79,8 @@ function setSellerPrice(listingId, price) {
   return db.ref(`listings/${listingId}/price`).set(price);
 }
 
-function setQueue(listingId, hasQueue) {
-  return db.ref(`listings/${listingId}/has_queue`).set(hasQueue);
+function createQueue(listingId) {
+  return db.ref(`listings/${listingId}/has_queue`).set(true);
 }
 
 module.exports = {
@@ -88,5 +88,5 @@ module.exports = {
   removeListing,
   createListing,
   setSellerPrice,
-  setQueue
+  createQueue
 };

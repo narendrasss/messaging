@@ -5,6 +5,7 @@ const {
 } = require("../helpers");
 const { send } = require("../../../client");
 const { db } = require("../../../db");
+const { setContext } = require("../../../state/context");
 const t = require("../../../copy.json");
 
 async function promptNextAction(recipient, listingId) {
@@ -143,23 +144,13 @@ async function addUserToQueue(recipient, listingId) {
 async function removeUserFromQueue(recipient, listingId, title) {
   const listingRef = db.ref(`listings/${listingId}`);
   const snapshot = await listingRef.once("value");
-  const { queue = [], seller } = snapshot.val();
+  const { queue = [] } = snapshot.val();
   const position = queue.indexOf(recipient.id);
   if (position < 0) {
     send.text(recipient, t.buyer.not_in_queue);
   } else {
     queue.splice(position, 1);
     await listingRef.child("queue").set(queue);
-    send
-      .text(
-        { id: seller },
-        "Someone from one of your listings has left the queue."
-      )
-      .then(() =>
-        send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title))
-      );
-
-    send.text(recipient, t.buyer.remove_queue);
     for (const id of queue) {
       const user = { id };
       const text = getUpdatedQueueMessage(id, queue, title);
@@ -169,12 +160,44 @@ async function removeUserFromQueue(recipient, listingId, title) {
       );
       send.text(user, text);
     }
+    return getUpdatedSellerQueueMessage(queue, title);
   }
+}
+
+function initializeQueueHandler(listingId) {
+  const queueRef = db.ref(`listings/${listingId}/queue`);
+  queueRef.on("value", async snapshot => {
+    const queue = snapshot.val();
+    console.log(queue);
+    if (queue) {
+      const firstInLine = queue[0];
+      const replies = [
+        {
+          content_type: "text",
+          title: "Yes",
+          payload: "accept-seller-offer"
+        },
+        {
+          content_type: "text",
+          title: "No",
+          payload: "decline-seller-offer"
+        }
+      ];
+      setContext(firstInLine, "accept-price", { listingId });
+      await send.text({ id: firstInLine }, "You're now first in line!");
+      send.quickReplies(
+        { id: firstInLine },
+        replies,
+        "Are you happy with the listing's price?"
+      );
+    }
+  });
 }
 
 module.exports = {
   addUserToQueue,
   formatFAQ,
+  initializeQueueHandler,
   notifyBuyerStatus,
   promptInterestedBuyer,
   promptInterestedBuyerNoQueue,

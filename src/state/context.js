@@ -2,7 +2,10 @@ const state = {
   CATEGORIZE: "categorize",
   CHATTING: "chatting",
   FAQ_SETUP: "faq-setup",
-  FAQ_DONE: "faq-done"
+  FAQ_DONE: "faq-done",
+  BUYER_SETUP_OFFER: "buyer-setup-offer",
+  SELLER_SETUP_OFFER: "seller-setup-offer",
+  WAIT: "wait"
 };
 
 const context = {};

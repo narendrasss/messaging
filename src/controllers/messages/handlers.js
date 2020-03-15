@@ -1,6 +1,6 @@
 const { db } = require("../../db");
 const { getContext, setContext, state } = require("../../state/context");
-const { send } = require("../../client");
+const { send, getUserProfile } = require("../../client");
 const { getListingId } = require("./helpers");
 const commandHandlers = require("./commands/handlers");
 const stateHandlers = require("../../state/handlers");
@@ -32,6 +32,10 @@ async function handleText(recipient, message) {
         return stateHandlers.chatting(recipient, message);
       case state.FAQ_SETUP:
         return stateHandlers.faqSetup(recipient, message);
+      case state.BUYER_SETUP_OFFER:
+        return stateHandlers.offerSeller(recipient, message, ctx.data);
+      case state.SELLER_SETUP_OFFER:
+        return stateHandlers.offerBuyer(recipient, message, ctx.data);
       default:
         return;
     }
@@ -103,7 +107,8 @@ function handleQuickReply(recipient, message) {
       case "skip-faq":
         return seller.promptStart(recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
-        listings.setQueue(listingId, true);
+        listings.createQueue(listingId);
+        buyer.initializeQueueHandler(listingId);
         await send.text(recipient, "A queue has been sucessfuly set up.");
         return seller.promptSetupFAQ(recipient);
       case "add-queue":
@@ -112,8 +117,18 @@ function handleQuickReply(recipient, message) {
         return seller.displayQueue(recipient, listing.queue);
       case "skip-queue":
         return seller.promptSetupFAQ(recipient);
-      case "leave-queue":
-        return buyer.removeUserFromQueue(recipient, listingId, title);
+      case "leave-queue": {
+        const { seller: id } = listing;
+        const queueText = await buyer.removeUserFromQueue(
+          recipient,
+          listingId,
+          title
+        );
+        send
+          .text({ id }, "Someone from one of your listings has left the queue.")
+          .then(() => send.text({ id }, queueText));
+        return send.text(recipient, t.buyer.remove_queue);
+      }
       case "remove-listing":
         listings.removeListing(recipient.id, listingId);
         return seller.promptStart(recipient, t.seller.remove_listing);
@@ -126,6 +141,63 @@ function handleQuickReply(recipient, message) {
         await send.text(recipient, buyer.formatFAQ(faq));
         return buyer.promptInterestedBuyer(recipient, queue);
       }
+      case "accept-buyer-offer": {
+        const { buyer: buyerId } = data;
+        send.text(recipient, "Great! I'll notify the buyer.");
+        return getUserProfile(recipient, ["first_name"]).then(
+          ({ first_name }) =>
+            // TODO: Remove this later when the availability function is set up.
+            send.text(
+              { id: buyerId },
+              `Good news! ${first_name} has accepted your offer for ${listing.item}.`
+            )
+        );
+      }
+      case "counter-buyer-offer":
+        setContext(recipient.id, state.SELLER_SETUP_OFFER, {
+          ...data,
+          listing
+        });
+        return send.text(recipient, "How much would you like to offer?");
+      case "decline-buyer-offer": {
+        const { buyer: buyerId } = data;
+        await buyer.removeUserFromQueue(
+          { id: buyerId },
+          listingId,
+          listing.title
+        );
+        send.text(
+          { id: buyerId },
+          `You've been removed from the queue for ${listing.title}.`
+        );
+        return send.text(
+          recipient,
+          `The buyer has been kicked from the queue.`
+        );
+      }
+      case "hold":
+        // TODO
+        send.text(recipient, "Not implemented.");
+        break;
+      case "accept-seller-offer":
+        send.text(
+          recipient,
+          "Great! We've notified the seller of your acceptance."
+        );
+        return getUserProfile(recipient, ["first_name"]).then(
+          ({ first_name }) =>
+            // TODO: Remove this later when the availability function is set up.
+            send.text(
+              { id: listing.seller },
+              `Good news! ${first_name} has agreed to buy ${listing.item} for your asking price.`
+            )
+        );
+      case "decline-seller-offer":
+        setContext(recipient, state.BUYER_SETUP_OFFER, listing);
+        return send.text(
+          recipient,
+          "No worries. What would you like to offer the seller?"
+        );
       case "quit":
         // TODO
         send.text(recipient, "Not implemented.");

@@ -136,23 +136,13 @@ async function addUserToQueue(recipient, listingId) {
 async function removeUserFromQueue(recipient, listingId, title) {
   const listingRef = db.ref(`listings/${listingId}`);
   const snapshot = await listingRef.once("value");
-  const { queue = [], seller } = snapshot.val();
+  const { queue = [] } = snapshot.val();
   const position = queue.indexOf(recipient.id);
   if (position < 0) {
     send.text(recipient, t.buyer.not_in_queue);
   } else {
     queue.splice(position, 1);
     await listingRef.child("queue").set(queue);
-    send
-      .text(
-        { id: seller },
-        "Someone from one of your listings has left the queue."
-      )
-      .then(() =>
-        send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title))
-      );
-
-    send.text(recipient, t.buyer.remove_queue);
     for (const id of queue) {
       const user = { id };
       const text = getUpdatedQueueMessage(id, queue, title);
@@ -162,6 +152,7 @@ async function removeUserFromQueue(recipient, listingId, title) {
       );
       send.text(user, text);
     }
+    return getUpdatedSellerQueueMessage(queue, title);
   }
 }
 

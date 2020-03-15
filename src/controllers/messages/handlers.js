@@ -115,8 +115,18 @@ function handleQuickReply(recipient, message) {
         return seller.displayQueue(recipient, listing.queue);
       case "skip-queue":
         return seller.promptSetupFAQ(recipient);
-      case "leave-queue":
-        return buyer.removeUserFromQueue(recipient, listingId, title);
+      case "leave-queue": {
+        const { seller: id } = listing;
+        const queueText = await buyer.removeUserFromQueue(
+          recipient,
+          listingId,
+          title
+        );
+        send
+          .text({ id }, "Someone from one of your listings has left the queue.")
+          .then(() => send.text({ id }, queueText));
+        return send.text(recipient, t.buyer.remove_queue);
+      }
       case "remove-listing":
         listings.removeListing(recipient.id, listingId);
         return seller.promptStart(recipient, t.seller.remove_listing);
@@ -130,29 +140,44 @@ function handleQuickReply(recipient, message) {
         return buyer.promptInterestedBuyer(recipient, queue);
       }
       case "accept-buyer-offer": {
-        const { buyer } = data;
+        const { buyer: buyerId } = data;
         send.text(recipient, "Great! I'll notify the buyer.");
         return getUserProfile(recipient, ["first_name"]).then(
           ({ first_name }) =>
             // TODO: Remove this later when the availability function is set up.
             send.text(
-              { id: buyer },
+              { id: buyerId },
               `Good news! ${first_name} has accepted your offer for ${listing.item}.`
             )
         );
       }
       case "counter-buyer-offer":
-        // TODO
-        send.text(recipient, "Not implemented.");
-        break;
-      case "decline-buyer-offer":
+        setContext(recipient.id, state.SELLER_SETUP_OFFER, listing);
+        return send.text(recipient, "How much would you like to offer?");
+      case "decline-buyer-offer": {
+        const { buyer: buyerId } = data;
+        await buyer.removeUserFromQueue(
+          { id: buyerId },
+          listingId,
+          listing.title
+        );
+        send.text(
+          { id: buyerId },
+          `You've been removed from the queue for ${listing.title}`
+        );
+        return send.text(
+          recipient,
+          `The buyer has been kicked from the queue.`
+        );
+      }
+      case "hold":
         // TODO
         send.text(recipient, "Not implemented.");
         break;
       case "accept-seller-offer":
         send.text(
           recipient,
-          "Great! We've notified the seller on your acceptance."
+          "Great! We've notified the seller of your acceptance."
         );
         return getUserProfile(recipient, ["first_name"]).then(
           ({ first_name }) =>

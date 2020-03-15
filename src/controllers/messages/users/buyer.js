@@ -148,6 +148,7 @@ async function removeUserFromQueue(recipient, listingId, title) {
   if (position < 0) {
     send.text(recipient, t.buyer.not_in_queue);
   } else {
+    queue.splice(position, 1);
     const updates = [];
     updates.push(
       send
@@ -174,7 +175,6 @@ async function removeUserFromQueue(recipient, listingId, title) {
       );
     }
     await Promise.all(updates);
-    queue.splice(position, 1);
     listingRef.child("queue").set(queue);
   }
 }

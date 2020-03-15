@@ -76,8 +76,17 @@ function createListing(listingId, listing) {
  * @param {string} price
  */
 function setSellerPrice(listingId, price) {
-  const priceRef = db.ref(`listings/${listingId}/price`);
-  return priceRef.set(price);
+  return db.ref(`listings/${listingId}/price`).set(price);
 }
 
-module.exports = { addListing, removeListing, createListing, setSellerPrice };
+function setQueue(listingId, hasQueue) {
+  return db.ref(`listings/${listingId}/has_queue`).set(hasQueue);
+}
+
+module.exports = {
+  addListing,
+  removeListing,
+  createListing,
+  setSellerPrice,
+  setQueue
+};

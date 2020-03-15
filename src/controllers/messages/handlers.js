@@ -103,7 +103,7 @@ function handleQuickReply(recipient, message) {
       case "skip-faq":
         return seller.promptStart(recipient, t.faq.no_faq + t.general.next);
       case "setup-queue":
-        seller.setQueue(listingId, true);
+        listings.setQueue(listingId, true);
         await send.text(recipient, "A queue has been sucessfuly set up.");
         return seller.promptSetupFAQ(recipient);
       case "add-queue":

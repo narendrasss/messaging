@@ -64,15 +64,17 @@ function handleTimers(listingId, roomId, from, to) {
     const lastMessageSnapshot = await db
       .ref(`rooms/${roomId}/last_message`)
       .once("value");
-    let { warning_timeout, timeout } = lastMessageSnapshot.val();
-    clearTimeout(warning_timeout);
-    clearTimeout(timeout);
+    if (lastMessageSnapshot) {
+      let { warning_timeout, timeout } = lastMessageSnapshot.val();
+      clearTimeout(warning_timeout);
+      clearTimeout(timeout);
+    }
 
     // create the new timeout objects
-    warning_timeout = setTimeout(() => {
+    const warning_timeout = setTimeout(() => {
       send.text({ id: to }, warningMessage);
     }, DELAY / 2);
-    timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       send.text({ id: to }, dangerMessage);
     }, DELAY);
 

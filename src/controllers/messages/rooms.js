@@ -64,7 +64,7 @@ function handleTimers(listingId, roomId, from, to) {
     const lastMessageSnapshot = await db
       .ref(`rooms/${roomId}/last_message`)
       .once("value");
-    if (lastMessageSnapshot) {
+    if (lastMessageSnapshot.val()) {
       let { warning_timeout, timeout } = lastMessageSnapshot.val();
       clearTimeout(warning_timeout);
       clearTimeout(timeout);

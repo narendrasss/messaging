@@ -27,6 +27,15 @@ Example DB instance:
   "rooms": {
     "room1": {
       "is_active": true,
+      "last_message": {
+        "from": "id",
+        "warning_timeout": {
+          /* warning timeout object */
+        },
+        "timeout": {
+          /* final timeout object */
+        }
+      },
       "listing": "listing1",
       "members": ["user1", "user2"],
       "messages": ["m1"]

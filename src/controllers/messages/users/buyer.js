@@ -128,7 +128,7 @@ async function addUserToQueue(recipient, listingId) {
   await Promise.all(updates);
   promptNextAction(recipient, listingId);
   await send.text({ id: seller }, `Someone joined the queue for ${title}!`);
-  send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title));
+  return send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title));
 }
 
 /**

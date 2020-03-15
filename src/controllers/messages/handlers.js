@@ -1,49 +1,26 @@
 const { db } = require("../../db");
-const {
-  getContext,
-  setContext,
-  removeContext,
-  state
-} = require("../../state/context");
-const { getUserProfile, send } = require("../../client");
+const { getContext, setContext, state } = require("../../state/context");
+const { send } = require("../../client");
 const { getListingId } = require("./helpers");
-const handlers = require("../../state/handlers");
+const commandHandlers = require("./commands/handlers");
+const stateHandlers = require("../../state/handlers");
 const user = require("./users/user");
 const buyer = require("./users/buyer");
 const seller = require("./users/seller");
 const listings = require("../../db/listings");
-const rooms = require("./rooms");
 const t = require("../../copy.json");
 
 async function handleText(recipient, message) {
   const ctx = getContext(recipient.id);
-  const {
-    data: { to, roomId }
-  } = ctx;
   if (message.text.startsWith("\\")) {
     // Handle commands here
-    const command = message.text.substring(1);
+    const command = message.text.substring(1).toLowerCase();
     switch (command) {
       case "q":
       case "quit":
-        if (!ctx || ctx.state !== state.CHATTING) {
-          return send.text(
-            recipient,
-            "It doesn't look like you're messaging anyone."
-          );
-        }
-        return rooms
-          .deactivateRoom(roomId)
-          .then(() => {
-            removeContext(to);
-            removeContext(recipient.id);
-            return getUserProfile(recipient, ["first_name"]);
-          })
-          .then(({ first_name }) =>
-            send.text({ id: to }, `${first_name} has left the chat.`)
-          )
-          .then(() => send.text(recipient, "Successfully disconnected."))
-          .catch(err => console.error(err));
+        return commandHandlers.handleQuit(ctx, message);
+      case "message seller":
+        return commandHandlers.handleMessageSeller(ctx, message);
       default:
         return;
     }
@@ -52,37 +29,14 @@ async function handleText(recipient, message) {
   if (ctx) {
     switch (ctx.state) {
       case state.CHATTING:
-        handlers.chatting(recipient, message);
-        break;
+        return stateHandlers.chatting(recipient, message);
       case state.FAQ_SETUP:
-        handlers.faqSetup(recipient, message);
-        break;
+        return stateHandlers.faqSetup(recipient, message);
       default:
-        break;
+        return;
     }
   }
 
-  if (message.text === "message seller") {
-    const { data } = ctx;
-    const { listingId } = data;
-    const snapshot = await db.ref(`listings/${listingId}`).once("value");
-    const { seller } = snapshot.val();
-
-    let roomId = await rooms.getRoom(seller, recipient.id);
-    if (!roomId) {
-      roomId = await rooms.makeRoom(listingId, [seller, recipient.id]);
-    } else {
-      await rooms.activateRoom(roomId);
-    }
-
-    const { first_name } = await getUserProfile(seller, ["first_name"]);
-    setContext(recipient.id, "chatting", { to: seller, roomId });
-    setContext(seller, "chatting", { to: recipient.id, roomId });
-    return send.text(
-      recipient,
-      `You are now connected with ${first_name}! You can disconnect any time by typing \\q or \\quit.`
-    );
-  }
   return send.text(recipient, message.text);
 }
 

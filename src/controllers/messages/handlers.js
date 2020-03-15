@@ -56,7 +56,7 @@ function handleListing(recipient, message) {
           }
           return buyer.notifyBuyerStatus(recipient, queue);
         }
-        return buyer.promptInterestedBuyerNoQueue(recipient, listing);
+        return buyer.promptInterestedBuyerNoQueue(recipient, listingId);
       } else {
         if (has_queue) {
           return seller.promptSellerListing(recipient, listing);

@@ -7,6 +7,27 @@ const { send } = require("../../../client");
 const { db } = require("../../../db");
 const t = require("../../../copy.json");
 
+async function promptNextAction(recipient, listingId) {
+  const listingRef = db.ref(`listings/${listingId}`);
+  const snapshot = await listingRef.once("value");
+  const listing = snapshot.val();
+  const replies = [
+    {
+      content_type: "text",
+      title: "Message seller",
+      payload: "message-seller"
+    }
+  ];
+  if (listing.faq) {
+    replies.push({
+      content_type: "text",
+      title: t.buyer.show_faq,
+      payload: "show-faq"
+    });
+  }
+  return send.quickReplies(recipient, replies, t.general.next);
+}
+
 /**
  * Formats a string displaying the faq, given an array of objects with questions and answers.
  *
@@ -53,23 +74,9 @@ function promptInterestedBuyer(recipient, queue) {
     .then(() => send.quickReplies(recipient, replies, t.queue.buyer_question));
 }
 
-async function promptInterestedBuyerNoQueue(recipient, listing) {
-  const replies = [
-    {
-      content_type: "text",
-      title: "Message seller",
-      payload: "message-seller"
-    }
-  ];
-  if (listing.faq) {
-    replies.push({
-      content_type: "text",
-      title: t.buyer.show_faq,
-      payload: "show-faq"
-    });
-  }
+async function promptInterestedBuyerNoQueue(recipient, listingId) {
   await send.text(recipient, t.buyer.no_queue);
-  send.quickReplies(recipient, replies, t.general.next);
+  return promptNextAction(recipient, listingId);
 }
 
 async function notifyBuyerStatus(recipient, queue) {
@@ -119,8 +126,9 @@ async function addUserToQueue(recipient, listingId) {
   }
 
   await Promise.all(updates);
+  promptNextAction(recipient, listingId);
   await send.text({ id: seller }, `Someone joined the queue for ${title}!`);
-  return send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title));
+  send.text({ id: seller }, getUpdatedSellerQueueMessage(queue, title));
 }
 
 /**

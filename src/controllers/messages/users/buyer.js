@@ -72,8 +72,8 @@ async function promptInterestedBuyerNoQueue(recipient, listing) {
   send.quickReplies(recipient, replies, t.general.next);
 }
 
-function notifyBuyerStatus(recipient, queue) {
-  send.text(recipient, getQueueMessage(recipient.id, queue));
+async function notifyBuyerStatus(recipient, queue) {
+  await send.text(recipient, getQueueMessage(recipient.id, queue));
   send.quickReplies(
     recipient,
     [
@@ -97,7 +97,7 @@ function notifyBuyerStatus(recipient, queue) {
   );
 }
 
-async function addUserToQueue(client, recipient, listingId) {
+async function addUserToQueue(recipient, listingId) {
   const listingRef = db.ref(`listings/${listingId}`);
   const snapshot = await listingRef.once("value");
   const {

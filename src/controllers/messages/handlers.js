@@ -48,8 +48,8 @@ function handleListing(recipient, message) {
     setContext(recipient.id, "", { listingId, title });
     const listing = snapshot.val();
     if (listing) {
-      const { seller, has_queue, queue = [] } = listing;
-      if (seller !== recipient.id) {
+      const { seller: sellerId, has_queue, queue = [] } = listing;
+      if (sellerId !== recipient.id) {
         if (has_queue) {
           if (!queue.includes(recipient.id)) {
             return buyer.promptInterestedBuyer(recipient, queue);
@@ -74,26 +74,30 @@ function handleQuickReply(recipient, message) {
   const { data } = getContext(recipient.id);
   const { listingId, title } = data;
 
+  switch (payload) {
+    case "buyer":
+      return send.text(recipient, t.buyer.no_share);
+    case "seller":
+      listings.addListing(recipient.id, listingId);
+      listings.createListing(listingId, {
+        seller: recipient.id,
+        has_queue: false,
+        queue: [],
+        faq: [],
+        price: 0,
+        title
+      });
+      return seller.promptSetupQueue(recipient);
+    default:
+      break;
+  }
+
   const listingRef = db.ref(`listings/${listingId}`);
 
   listingRef.once("value", async snapshot => {
     const listing = snapshot.val();
-    const { queue = [], faq = [] } = listing;
 
     switch (payload) {
-      case "buyer":
-        return send.text(recipient, t.buyer.no_share);
-      case "seller":
-        listings.addListing(recipient.id, listingId);
-        listings.createListing(listingId, {
-          seller: recipient.id,
-          has_queue: false,
-          queue: [],
-          faq: [],
-          price: 0,
-          title
-        });
-        return seller.promptSetupQueue(recipient);
       case "setup-faq":
         return seller.setupFAQ(recipient, listingId);
       case "skip-faq":
@@ -117,9 +121,11 @@ function handleQuickReply(recipient, message) {
         return user.showListings(recipient);
       case "show-interests":
         return user.showInterests(recipient);
-      case "show-faq":
+      case "show-faq": {
+        const { queue = [], faq = [] } = listing;
         await send.text(recipient, buyer.formatFAQ(faq));
         return buyer.promptInterestedBuyer(recipient, queue);
+      }
       case "quit":
         // TODO
         send.text(recipient, "Not implemented.");

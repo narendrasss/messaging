@@ -53,6 +53,7 @@ async function offer(recipient, message, listing) {
   const { first_name } = await getUserProfile(recipient, ["first_name"]);
   const { seller, title } = listing;
   setContext(recipient.id, state.WAIT, listing);
+  setContext(seller, "offer", { listing, buyer: recipient.id });
   await send.quickReplies(
     { id: seller },
     [

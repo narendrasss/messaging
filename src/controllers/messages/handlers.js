@@ -129,10 +129,18 @@ function handleQuickReply(recipient, message) {
         await send.text(recipient, buyer.formatFAQ(faq));
         return buyer.promptInterestedBuyer(recipient, queue);
       }
-      case "accept-buyer-offer":
-        // TODO
-        send.text(recipient, "Not implemented.");
-        break;
+      case "accept-buyer-offer": {
+        const { buyer } = data;
+        send.text(recipient, "Great! I'll notify the buyer.");
+        return getUserProfile(recipient, ["first_name"]).then(
+          ({ first_name }) =>
+            // TODO: Remove this later when the availability function is set up.
+            send.text(
+              { id: buyer },
+              `Good news! ${first_name} has accepted your offer for ${listing.item}.`
+            )
+        );
+      }
       case "counter-buyer-offer":
         // TODO
         send.text(recipient, "Not implemented.");

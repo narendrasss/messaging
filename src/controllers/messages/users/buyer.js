@@ -99,13 +99,13 @@ async function notifyBuyerStatus(recipient, queue) {
 
 async function addUserToQueue(recipient, listingId) {
   const listingRef = db.ref(`listings/${listingId}`);
-  const snapshot = await listingRef.once("value");
-  const {
-    queue = [],
-    listings_buy: interests = [],
-    seller,
-    title
-  } = snapshot.val();
+  const userRef = db.ref(`users/${recipient.id}`);
+  const [listingSnapshot, userSnapshot] = await Promise.all([
+    listingRef.once("value"),
+    userRef.once("value")
+  ]);
+  const { queue = [], seller, title } = listingSnapshot.val();
+  const { listings_buy: interests = [] } = userSnapshot.val();
 
   const updates = [];
   if (!queue.includes(recipient.id)) {
@@ -115,7 +115,7 @@ async function addUserToQueue(recipient, listingId) {
 
   if (!interests.includes(listingId)) {
     interests.push(listingId);
-    updates.push(listingRef.child("listings_buy").set(interests));
+    updates.push(userRef.child("listings_buy").set(interests));
   }
 
   await Promise.all(updates);

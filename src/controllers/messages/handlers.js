@@ -4,6 +4,7 @@ const { send } = require("../../client");
 const { getListingId } = require("./helpers");
 const commandHandlers = require("./commands/handlers");
 const stateHandlers = require("../../state/handlers");
+const { buyerService } = require("../../state/machine");
 const user = require("./users/user");
 const buyer = require("./users/buyer");
 const seller = require("./users/seller");
@@ -73,6 +74,36 @@ function handleQuickReply(recipient, message) {
   const { payload } = message.quick_reply;
   const { data } = getContext(recipient.id);
   const { listingId, title } = data;
+
+  // needed for integration of xstate with current handlers
+  switch (payload) {
+    case "accept-seller-offer":
+      buyerService.send("OFFER");
+      break;
+    case "wait":
+      buyerService.send("WAIT");
+      break;
+    default:
+      break;
+  }
+
+  const {
+    context: { currentState }
+  } = buyerService;
+
+  if (currentState) {
+    // checks to see if we're using xstate to maintain state
+    switch (currentState) {
+      case "accept-offer":
+        console.log("accept-offer");
+        return;
+      case "wait":
+        console.log("wait");
+        return;
+      default:
+        return;
+    }
+  }
 
   switch (payload) {
     case "buyer":

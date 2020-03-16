@@ -42,6 +42,8 @@
   },
   "seller": {
     "item_sold": "Remove listing",
+    "no_interests": "You are not in a queue for any listing.",
+    "no_sale": "You haven't shared any listings yet.",
     "own_listing": "This is one of your listings!",
     "remove_listing": "This item was successfully removed from your listings. What would you like to do next?",
     "quit": "Quit",

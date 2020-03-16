@@ -16,7 +16,7 @@ async function displayQueue(recipient, queue) {
   let message =
     "There " +
     (q.length === 1 ? "is 1 person" : `are ${q.length} people `) +
-    "in the queue.\n";
+    " in the queue.\n";
 
   for (const psid of q) {
     const user = await getUserProfile({ id: psid }, [
@@ -65,7 +65,7 @@ function promptStart(recipient, text) {
       payload: "quit"
     }
   ];
-  send.quickReplies(recipient, replies, text);
+  return send.quickReplies(recipient, replies, text);
 }
 
 /**

@@ -1,5 +1,6 @@
 const { db } = require("../../../db");
 const { send } = require("../../../client");
+const seller = require("./seller");
 const t = require("../../../copy.json");
 
 // AUTOMATED REPLIES
@@ -31,15 +32,20 @@ function promptUserCategorization(recipient) {
  *
  * @param {object} recipient
  */
-function showInterests(recipient) {
-  const user = db.ref(`users/${recipient.id}`);
-  user.once("value", snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      const { listings_buy } = val;
-      const template = _constructTemplate(listings_buy, "generic");
-      return send.template(recipient, template);
+async function showInterests(recipient) {
+  const interestsRef = db.ref(`users/${recipient.id}/listings_buy`);
+  interestsRef.once("value", async snapshot => {
+    const listings_buy = snapshot.val();
+    if (listings_buy) {
+      return _constructTemplate(listings_buy, "generic")
+        .then(template => send.template(recipient, template))
+        .then(() => seller.promptStart(recipient, t.general.next))
+        .catch(err => console.error(err));
     }
+    return send
+      .text(recipient, t.seller.no_interests)
+      .then(() => seller.promptStart(recipient, t.general.next))
+      .catch(err => console.error(err));
   });
 }
 
@@ -48,20 +54,20 @@ function showInterests(recipient) {
  *
  * @param {object} recipient
  */
-function showListings(recipient) {
-  const user = db.ref(`users/${recipient.id}`);
-  user.once("value", snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      const { listings_sale } = val;
-      if (!listings_sale) {
-        send.text(recipient, "You haven't shared any listings yet.");
-      } else {
-        _constructTemplate(listings_sale, "generic").then(template =>
-          send.template(recipient, template)
-        );
-      }
+async function showListings(recipient) {
+  const saleRef = db.ref(`users/${recipient.id}/listings_sale`);
+  saleRef.once("value", async snapshot => {
+    const listings_sale = snapshot.val();
+    if (listings_sale) {
+      return _constructTemplate(listings_sale, "generic")
+        .then(template => send.template(recipient, template))
+        .then(() => seller.promptStart(recipient, t.general.next))
+        .catch(err => console.error(err));
     }
+    return send
+      .text(recipient, t.seller.no_sale)
+      .then(() => seller.promptStart(recipient, t.general.next))
+      .catch(err => console.error(err));
   });
 }
 
@@ -71,7 +77,7 @@ function showListings(recipient) {
  * @param {array} listings
  * @param {string} template_type
  */
-function _constructTemplate(listings, template_type) {
+async function _constructTemplate(listings, template_type) {
   const elements = [];
   for (const listing of listings) {
     elements.push(

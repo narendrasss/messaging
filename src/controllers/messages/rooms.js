@@ -1,6 +1,6 @@
 const { db } = require("../../db");
 const { send } = require("../../client");
-const listings = require("../../db/listings");
+const buyer = require("./users/buyer");
 const t = require("../../copy.json");
 
 async function makeRoom(listingId, members) {
@@ -48,8 +48,8 @@ function handleTimers(listingId, roomId, from, to) {
   const DELAY = 1000 * 30;
 
   // we need to figure out if it's a buyer or if it's a seller
-  db.ref(`listings/${listingId}/seller`, async snapshot => {
-    const sellerId = snapshot.val();
+  db.ref(`listings/${listingId}`, async snapshot => {
+    const { sellerId, title } = snapshot.val();
     let warningMessage, dangerMessage;
     if (from == sellerId) {
       // if the person sending the message is the seller
@@ -77,6 +77,10 @@ function handleTimers(listingId, roomId, from, to) {
     }, DELAY / 2);
     const timeout = setTimeout(() => {
       send.text({ id: to }, dangerMessage);
+      // if the message is going to the buyer, we need to kick them out of the queue
+      if (sellerId != to) {
+        buyer.removeUserFromQueue({ id: to }, listingId, title);
+      }
     }, DELAY);
 
     // persist the timeout objects to the database

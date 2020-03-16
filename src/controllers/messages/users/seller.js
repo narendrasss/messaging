@@ -33,9 +33,10 @@ async function displayQueue(recipient, queue) {
  *
  * @param {object} recipient
  */
-function setupFAQ(recipient) {
+function setupFAQ(recipient, listingId) {
   setContext(recipient.id, state.FAQ_SETUP, {
     ...getContext(recipient.id).data,
+    listingId,
     question: 0
   });
   send.text(recipient, t.faq.questions[0]);

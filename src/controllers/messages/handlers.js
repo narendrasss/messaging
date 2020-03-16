@@ -109,7 +109,7 @@ function handleQuickReply(recipient, message) {
 
     switch (payload) {
       case "setup-faq":
-        return seller.setupFAQ(recipient);
+        return seller.setupFAQ(recipient, listingId);
       case "skip-faq":
         return seller.promptStart(
           recipient,

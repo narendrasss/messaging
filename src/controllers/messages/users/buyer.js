@@ -16,11 +16,6 @@ async function promptNextAction(recipient, listingId) {
       content_type: "text",
       title: "Message seller",
       payload: "message-seller"
-    },
-    {
-      content_type: "text",
-      title: t.general.quit,
-      payload: "quit"
     }
   ];
   if (listing.faq) {
@@ -30,6 +25,11 @@ async function promptNextAction(recipient, listingId) {
       payload: "show-faq"
     });
   }
+  replies.push({
+    content_type: "text",
+    title: t.general.quit,
+    payload: "quit"
+  });
   return send.quickReplies(recipient, replies, t.general.next);
 }
 
@@ -41,10 +41,11 @@ async function promptNextAction(recipient, listingId) {
 function formatFAQ(faq) {
   if (faq.length > 0) {
     let formattedMessage = "";
-    for (const { question, answer } of faq) {
-      formattedMessage += `Question: ${question}\n` + `Answer: ${answer}\n\n`;
-    }
-    return formattedMessage.substring(0, -2);
+    faq.forEach((answer, index) => {
+      formattedMessage +=
+        `Question: ${t.faq.questions[index]}\n` + `Answer: ${answer}\n\n`;
+    });
+    return formattedMessage.substring(0, formattedMessage.length - 2);
   } else {
     return t.buyer.no_faq;
   }

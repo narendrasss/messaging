@@ -11,7 +11,7 @@ function chatting(recipient, message) {
 }
 
 function faqSetup(recipient, message) {
-  const { data, listingId } = getContext(recipient.id);
+  const { data } = getContext(recipient.id);
   // if the user is currently setting up their FAQ
   const answeredQuestions = data.questions;
   setContext(recipient.id, state.FAQ_SETUP, {
@@ -27,10 +27,10 @@ function faqSetup(recipient, message) {
       "Oops, I don't understand that. Please type in a number."
     );
   }
-  const listingRef = db.ref(`listings/${listingId}`);
+  const listingRef = db.ref(`listings/${data.listingId}`);
   listingRef.once("value", snapshot => {
     const listing = snapshot.val();
-    const faq = listing ? listing.faq : [];
+    const { faq = [] } = listing;
 
     faq.push(message.text);
     listingRef.set({ ...listing, faq, price });

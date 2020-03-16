@@ -138,7 +138,9 @@ function handleQuickReply(recipient, message) {
         return user.showInterests(recipient);
       case "show-faq": {
         const { queue = [], faq = [] } = listing;
-        await send.text(recipient, buyer.formatFAQ(faq));
+        const formattedFAQ = buyer.formatFAQ(faq);
+        console.log(formattedFAQ);
+        await send.text(recipient, formattedFAQ);
         if (!queue.includes(recipient.id)) {
           return buyer.promptInterestedBuyer(recipient, queue);
         }

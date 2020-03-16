@@ -120,7 +120,8 @@ async function addUserToQueue(recipient, listingId) {
     userRef.once("value")
   ]);
   const { queue = [], seller, title } = listingSnapshot.val();
-  const { listings_buy: interests = [] } = userSnapshot.val();
+  const user = userSnapshot.val();
+  const interests = user ? user.listings_buy : [];
 
   const updates = [];
   if (!queue.includes(recipient.id)) {

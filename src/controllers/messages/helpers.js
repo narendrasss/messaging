@@ -67,12 +67,10 @@ function getUpdatedQueueMessage(id, queue, item) {
 }
 
 function getSellerStatusMessage(listing) {
-  return (
-    t.seller.own_listing +
-    " " +
-    getQueueMessage(null, listing.queue || []) +
-    t.general.next
-  );
+  return `${t.seller.own_listing} ${getQueueMessage(
+    null,
+    listing.queue || []
+  )} ${t.general.next}`;
 }
 
 function getUpdatedSellerQueueMessage(queue = [], title) {

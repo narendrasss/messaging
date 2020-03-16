@@ -44,31 +44,38 @@ async function handleText(recipient, message) {
 }
 
 function handleListing(recipient, message) {
-  const listingsRef = db.ref("listings");
-  const { title } = message.attachments[0].payload;
-  const listingId = getListingId(message);
-  listingsRef.child(listingId).once("value", snapshot => {
-    setContext(recipient.id, "", { listingId, title });
-    const listing = snapshot.val();
-    if (listing) {
-      const { seller: sellerId, has_queue, queue = [] } = listing;
-      if (sellerId !== recipient.id) {
-        if (has_queue) {
-          if (!queue.includes(recipient.id)) {
-            return buyer.promptInterestedBuyer(recipient, queue);
-          }
-          return buyer.notifyBuyerStatus(recipient, queue);
-        }
-        return buyer.promptInterestedBuyerNoQueue(recipient, listingId);
-      } else {
-        if (has_queue) {
-          return seller.promptSellerListing(recipient, listing);
-        }
-        return seller.promptSetupQueue(recipient);
-      }
+  db.ref(`users/${recipient.id}`).once("value", async snapshot => {
+    if (!snapshot.val()) {
+      const user = { listings_sale: [], listings_buy: [] };
+      await db.ref(`users/${recipient.id}`).set(user);
     }
-    setContext(recipient.id, state.CATEGORIZE, { listingId, title });
-    return user.promptUserCategorization(recipient);
+
+    const listingsRef = db.ref("listings");
+    const { title } = message.attachments[0].payload;
+    const listingId = getListingId(message);
+    listingsRef.child(listingId).once("value", snapshot => {
+      setContext(recipient.id, "", { listingId, title });
+      const listing = snapshot.val();
+      if (listing) {
+        const { seller: sellerId, has_queue, queue = [] } = listing;
+        if (sellerId !== recipient.id) {
+          if (has_queue) {
+            if (!queue.includes(recipient.id)) {
+              return buyer.promptInterestedBuyer(recipient, queue);
+            }
+            return buyer.notifyBuyerStatus(recipient, queue);
+          }
+          return buyer.promptInterestedBuyerNoQueue(recipient, listingId);
+        } else {
+          if (has_queue) {
+            return seller.promptSellerListing(recipient, listing);
+          }
+          return seller.promptSetupQueue(recipient);
+        }
+      }
+      setContext(recipient.id, state.CATEGORIZE, { listingId, title });
+      return user.promptUserCategorization(recipient);
+    });
   });
 }
 
@@ -131,7 +138,9 @@ function handleQuickReply(recipient, message) {
         return user.showInterests(recipient);
       case "show-faq": {
         const { queue = [], faq = [] } = listing;
-        await send.text(recipient, buyer.formatFAQ(faq));
+        const formattedFAQ = buyer.formatFAQ(faq);
+        console.log(formattedFAQ);
+        await send.text(recipient, formattedFAQ);
         if (!queue.includes(recipient.id)) {
           return buyer.promptInterestedBuyer(recipient, queue);
         }

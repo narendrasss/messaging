@@ -1,9 +1,9 @@
+const { db } = require("../db/index");
 const { getContext, setContext, state } = require("../state/context");
 const { send } = require("../client");
 const t = require("../copy.json");
 const rooms = require("../controllers/messages/rooms");
 const seller = require("../controllers/messages/users/seller");
-const listings = require("../db/listings");
 
 function chatting(recipient, message) {
   const { listingId, to, roomId } = getContext(recipient.id).data;
@@ -27,7 +27,14 @@ function faqSetup(recipient, message) {
       "Oops, I don't understand that. Please type in a number."
     );
   }
-  listings.setSellerPrice(data.listingId, price);
+  const listingRef = db.ref(`listings/${data.listingId}`);
+  listingRef.once("value", snapshot => {
+    const listing = snapshot.val();
+    const { faq = [] } = listing;
+
+    faq.push(message.text);
+    listingRef.set({ ...listing, faq, price });
+  });
 
   if (answeredQuestions < t.faq.questions.length) {
     // if the user hasn't answered all the questions

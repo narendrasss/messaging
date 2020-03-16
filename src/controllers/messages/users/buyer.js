@@ -16,6 +16,11 @@ async function promptNextAction(recipient, listingId) {
       content_type: "text",
       title: "Message seller",
       payload: "message-seller"
+    },
+    {
+      content_type: "text",
+      title: t.general.quit,
+      payload: "quit"
     }
   ];
   if (listing.faq) {
@@ -99,7 +104,7 @@ async function notifyBuyerStatus(recipient, queue) {
       },
       {
         content_type: "text",
-        title: t.buyer.quit,
+        title: t.general.quit,
         payload: "quit"
       }
     ],
@@ -129,7 +134,7 @@ async function addUserToQueue(recipient, listingId) {
   }
 
   await Promise.all(updates);
-  if (queue.length > 1) {
+  if (queue.length >= 1) {
     promptNextAction(recipient, listingId);
   }
   await send.text({ id: seller }, `Someone joined the queue for ${title}!`);

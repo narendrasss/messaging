@@ -1,6 +1,10 @@
 const { db } = require(".");
 const { send } = require("../client");
 const { setContext } = require("../state/context");
+const {
+  getUpdatedSellerQueueMessage,
+  getUpdatedQueueMessage
+} = require("../controllers/messages/helpers");
 const t = require("../copy.json");
 
 const prevMessaged = {};
@@ -75,12 +79,40 @@ function createListing(listingId, listing) {
 }
 
 async function removeUserFromQueue(listingId, userId) {
-  const snapshot = await db.ref(`listings/${listingId}/queue`).once("value");
-  const queue = snapshot.val();
-  if (queue) {
-    const pos = queue.indexOf(userId);
-    queue.splice(pos, 1);
-    await snapshot.ref.set(queue);
+  const snapshot = await db.ref(`listings/${listingId}`).once("value");
+  if (snapshot.val()) {
+    const { seller: sellerId, queue, title } = snapshot.val();
+
+    const seller = { id: sellerId };
+    const buyer = { id: userId };
+
+    if (queue) {
+      const pos = queue.indexOf(userId);
+      queue.splice(pos, 1);
+
+      const updates = [];
+      updates.push(
+        send
+          .text(seller, t.chat.seller_update)
+          .then(() =>
+            send.text(seller, getUpdatedSellerQueueMessage(queue, title))
+          )
+      );
+
+      updates.push(send.text(buyer, t.chat.buyer_danger));
+      for (const id of queue) {
+        const user = { id };
+        updates.push(
+          send
+            .text(user, t.buyer.queue_update)
+            .then(() =>
+              send.text(user, getUpdatedQueueMessage(id, queue, title))
+            )
+        );
+      }
+      await Promise.all(updates);
+      snapshot.ref.child("queue").set(queue);
+    }
   }
 }
 

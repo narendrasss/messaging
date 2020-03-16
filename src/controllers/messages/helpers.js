@@ -71,7 +71,7 @@ function getSellerStatusMessage(listing) {
     t.seller.own_listing +
     " " +
     getQueueMessage(null, listing.queue || []) +
-    " What would you like to do next?"
+    t.general.next
   );
 }
 

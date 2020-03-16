@@ -16,7 +16,7 @@ async function handleMessageSeller(ctx, recipient) {
     await rooms.activateRoom(roomId);
   }
 
-  const { first_name } = await getUserProfile(seller, ["first_name"]);
+  const { first_name } = await getUserProfile({ id: seller }, ["first_name"]);
   setContext(recipient.id, "chatting", { to: seller, roomId });
   setContext(seller, "chatting", { to: recipient.id, roomId });
   return send.text(

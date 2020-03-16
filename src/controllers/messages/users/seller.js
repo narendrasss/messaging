@@ -61,7 +61,7 @@ function promptStart(recipient, text) {
     },
     {
       content_type: "text",
-      title: t.start.quit,
+      title: t.general.quit,
       payload: "quit"
     }
   ];
@@ -92,7 +92,7 @@ function promptSellerListing(recipient, listing) {
     },
     {
       content_type: "text",
-      title: t.seller.quit,
+      title: t.general.quit,
       payload: "quit"
     }
   ];

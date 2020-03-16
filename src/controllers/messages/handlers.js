@@ -12,22 +12,23 @@ const t = require("../../copy.json");
 
 async function handleText(recipient, message) {
   const ctx = getContext(recipient.id);
-  if (message.text.startsWith("\\")) {
-    // Handle commands here
-    const command = message.text.substring(1).toLowerCase();
-    switch (command) {
-      case "q":
-      case "quit":
-        return commandHandlers.handleQuit(ctx, message);
-      case "message seller":
-        return commandHandlers.handleMessageSeller(ctx, message);
-      default:
-        // TODO
-        return send.text(recipient, "Not implemented.");
-    }
-  }
 
   if (ctx) {
+    if (message.text.startsWith("\\")) {
+      // Handle commands here
+      const command = message.text.substring(1).toLowerCase();
+      switch (command) {
+        case "q":
+        case "quit":
+          return commandHandlers.handleQuit(ctx, recipient);
+        case "message seller":
+          return commandHandlers.handleMessageSeller(ctx, recipient);
+        default:
+          // TODO
+          return send.text(recipient, "Not implemented.");
+      }
+    }
+
     switch (ctx.state) {
       case state.CHATTING:
         return stateHandlers.chatting(recipient, message);
@@ -120,7 +121,7 @@ function handleQuickReply(recipient, message) {
       case "leave-queue":
         return buyer.removeUserFromQueue(recipient, listingId, title);
       case "message-seller":
-        return handleText(recipient, { message: { text: "\\message seller" } });
+        return handleText(recipient, { text: "\\message seller" });
       case "remove-listing":
         listings.removeListing(recipient.id, listingId);
         return seller.promptStart(recipient, t.seller.remove_listing);

@@ -1,7 +1,9 @@
 const { db } = require("../../db");
 const { send } = require("../../client");
-const buyer = require("./users/buyer");
+const listings = require("../../db/listings");
 const t = require("../../copy.json");
+
+const TIMEOUTS = {};
 
 async function makeRoom(listingId, members) {
   const roomsRef = db.ref("rooms");
@@ -40,6 +42,7 @@ async function activateRoom(roomId) {
 }
 
 async function deactivateRoom(roomId) {
+  await clearTimeouts(roomId);
   return db.ref(`rooms/${roomId}/is_active`).set(false);
 }
 
@@ -48,8 +51,8 @@ function handleTimers(listingId, roomId, from, to) {
   const DELAY = 1000 * 30;
 
   // we need to figure out if it's a buyer or if it's a seller
-  db.ref(`listings/${listingId}`, async snapshot => {
-    const { sellerId, title } = snapshot.val();
+  db.ref(`listings/${listingId}/seller`).once("value", async snapshot => {
+    const sellerId = snapshot.val();
     let warningMessage, dangerMessage;
     if (from == sellerId) {
       // if the person sending the message is the seller
@@ -62,14 +65,7 @@ function handleTimers(listingId, roomId, from, to) {
     }
 
     // we need to clear the stored timeouts
-    const lastMessageSnapshot = await db
-      .ref(`rooms/${roomId}/last_message`)
-      .once("value");
-    if (lastMessageSnapshot.val()) {
-      let { warning_timeout, timeout } = lastMessageSnapshot.val();
-      clearTimeout(warning_timeout);
-      clearTimeout(timeout);
-    }
+    clearTimeouts(roomId);
 
     // create the new timeout objects
     const warning_timeout = setTimeout(() => {
@@ -79,17 +75,23 @@ function handleTimers(listingId, roomId, from, to) {
       send.text({ id: to }, dangerMessage);
       // if the message is going to the buyer, we need to kick them out of the queue
       if (sellerId != to) {
-        buyer.removeUserFromQueue({ id: to }, listingId, title);
+        listings.removeUserFromQueue(listingId, { id: to });
       }
     }, DELAY);
 
-    // persist the timeout objects to the database
+    // persist the timeout objects to RAM
     const lastMessage = { from, warning_timeout, timeout };
-    await db
-      .ref(`rooms/${roomId}/last_message`)
-      .once("value")
-      .set(lastMessage);
+    TIMEOUTS[roomId] = lastMessage;
   });
+}
+
+async function clearTimeouts(roomId) {
+  const lastMessage = TIMEOUTS[roomId];
+  if (lastMessage) {
+    const { warning_timeout, timeout } = lastMessage;
+    clearTimeout(warning_timeout);
+    clearTimeout(timeout);
+  }
 }
 
 module.exports = {
